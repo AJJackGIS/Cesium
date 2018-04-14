@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cesium入手</title>
+    <link rel="stylesheet" href="http://localhost:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css">
+    <script src="http://localhost:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<script>
+    var viewer = new Cesium.Viewer("cesiumContainer", {
+        animation: false, //是否创建动画小器件，左下角仪表
+        baseLayerPicker: false,//是否显示图层选择器,右上角按钮
+        fullscreenButton: false,//是否显示全屏按钮,右下角按钮
+        geocoder: false,//是否显示geocoder小器件，右上角查询按钮
+        homeButton: true,//是否显示Home按钮,右上角按钮
+        // infoBox : false,//是否显示信息框，这个还没用到
+        sceneModePicker: false,//是否显示3D/2D选择器 ,右上角按钮
+        selectionIndicator : false,//是否显示选取指示器组件，绿色选中框
+        timeline: false,//是否显示时间轴，底部
+        navigationHelpButton: false,//是否显示帮助按钮，右上角按钮
+        imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
+            url:"https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" // 自定义底图
+            // url:"https://server.hxct.com/server/rest/services//GoogleMap/MapServer"
+        })
+    });
+    setTimeout(function () {
+        viewer.scene.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(114.44024026393892, 30.44377150531985, 1000),
+            orientation: {
+                heading : Cesium.Math.toRadians( 0 ), // 朝向 左右旋转
+                pitch : Cesium.Math.toRadians( -90 ), // 仰角 上下旋转
+                roll : Cesium.Math.toRadians( 0 ) // 翻转 左右摇晃
+            },
+            duration: 3,//动画持续时间
+            complete: function (){ //飞行完毕后执行的动作,例如：加载三维数据
+
+            }
+        });
+    }, 1000);
+
+</script>
+</body>
+</html>

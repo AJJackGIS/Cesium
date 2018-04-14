@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>摄像机参数设置</title>
+    <link rel="stylesheet" href="http://localhost:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css">
+    <script type="text/javascript" src="http://localhost:8080/plugin/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="http://localhost:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #btnDiv {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id="btnDiv">
+    <button class="cesium-button" onclick="flyInACity()">短距离飞行</button>
+    <button class="cesium-button" onclick="flyToSanDiego()">普通飞行至指定位置</button>
+    <button class="cesium-button" onclick="flyToHeadingPitchRoll()">附带飞行姿态飞行</button>
+    <button class="cesium-button" onclick="flyToLocation()">飞到我的位置</button>
+    <button class="cesium-button" onclick="flyToRectangle()">飞到一个矩形范围</button>
+    <button class="cesium-button" onclick="viewRectangle()">设置视图范围</button>
+    <button class="cesium-button" onclick="setReferenceFrame()">设置相机参考框架</button>
+    <button class="cesium-button" onclick="setHeadingPitchRoll()">设置相机姿态</button>
+    <button class="cesium-button" onclick="cameraEvents()">相机移动事件</button>
+    <button class="cesium-button" onclick="losAngelesToTokyo()">飞行高度以及俯冲姿态的调整</button>
+</div>
+<script>
+
+    var viewer = new Cesium.Viewer("cesiumContainer", {
+        animation: false, //是否创建动画小器件，左下角仪表
+        baseLayerPicker: false,//是否显示图层选择器,右上角按钮
+        fullscreenButton: false,//是否显示全屏按钮,右下角按钮
+        geocoder: false,//是否显示geocoder小器件，右上角查询按钮
+        homeButton: false,//是否显示Home按钮,右上角按钮
+        infoBox: true,//是否显示信息框
+        sceneModePicker: false,//是否显示3D/2D选择器 ,右上角按钮
+        selectionIndicator: false,//是否显示选取指示器组件，绿色选中框
+        timeline: false,//是否显示时间轴，底部
+        navigationHelpButton: false//是否显示帮助按钮，右上角按钮
+    });
+    var scene = viewer.scene;
+
+    function flyInACity() {
+        var camera = scene.camera;
+        camera.flyTo({
+            destination : Cesium.Cartesian3.fromDegrees(-73.98580932617188, 40.74843406689482, 363.34038727246224), // 先飞到这个地方
+            complete : function() {
+                setTimeout(function() {
+                    camera.flyTo({
+                        destination : Cesium.Cartesian3.fromDegrees(-73.98585975679403, 40.75759944127251, 186.50838555841779), // 目标点
+                        orientation : {
+                            heading : Cesium.Math.toRadians(200.0), // 相机姿态三要素
+                            pitch : Cesium.Math.toRadians(-50.0)
+                        },
+                        easingFunction : Cesium.EasingFunction.LINEAR_NONE // 飞行曲线
+                    });
+                }, 3000); // 完成后 在飞到这个地方
+            }
+        });
+    }
+
+    function flyToSanDiego() {
+        viewer.camera.flyTo({
+            destination : Cesium.Cartesian3.fromDegrees(-117.16, 32.71, 15000.0) // 最简短的飞行参数
+        });
+    }
+
+    function flyToHeadingPitchRoll() {
+        viewer.camera.flyTo({
+            destination : Cesium.Cartesian3.fromDegrees(-122.22, 46.12, 5000.0),
+            orientation : {
+                heading : Cesium.Math.toRadians(20.0),
+                pitch : Cesium.Math.toRadians(-35.0),
+                roll : 0.0
+            }
+        });
+    }
+
+    function flyToLocation() {
+
+        // 根据浏览器定位（无法访问）
+        // navigator.geolocation.getCurrentPosition(function (position) { // 浏览器定位 success call back
+        //     viewer.camera.flyTo({
+        //         destination : Cesium.Cartesian3.fromDegrees(position.coords.longitude, position.coords.latitude, 1000.0)
+        //     });
+        // },function (error) {
+        //     alert(error.message);
+        // });
+
+        // 手动设置
+        viewer.camera.flyTo({
+            destination : Cesium.Cartesian3.fromDegrees(114.31, 30.52, 20000.0)
+        });
+    }
+
+    function flyToRectangle() {
+
+        var west = 114.0;
+        var south = 30.0;
+        var east = 115.0;
+        var north = 31.0;
+        var rectangle = Cesium.Rectangle.fromDegrees(west, south, east, north);
+
+        viewer.camera.flyTo({
+            destination : rectangle // 飞行到某个矩形区域
+        });
+
+        // 添加一个矩形框Entity
+        viewer.entities.add({
+            rectangle : {
+                coordinates : rectangle,
+                fill : true,
+                material: Cesium.Color.fromAlpha(Cesium.Color.RED, 0.4),
+                outline : true,
+                outlineColor : Cesium.Color.WHITE
+            }
+        });
+    }
+
+
+    function viewRectangle() {
+
+        var west = 114.0;
+        var south = 30.0;
+        var east = 115.0;
+        var north = 31.0;
+
+        var rectangle = Cesium.Rectangle.fromDegrees(west, south, east, north);
+        viewer.camera.setView({
+            destination: rectangle // 设置视角框
+        });
+
+        viewer.entities.add({
+            rectangle : {
+                coordinates : rectangle,
+                fill : true,
+                material: Cesium.Color.fromAlpha(Cesium.Color.YELLOW, 0.4),
+                outline : true,
+                outlineColor : Cesium.Color.WHITE
+            }
+        });
+    }
+
+    // 设置相机的参考框架
+    // 这个要特别说明一下===================设置这个，有点像是调用了viewer.trackedEntity方法
+    // 设置了这个就把当前的摄像头视角改了 相当于是改了坐标系 里面用到了 4*4矩阵变换 更改了坐标系
+    function setReferenceFrame() {
+
+        var center = Cesium.Cartesian3.fromDegrees(114.31, 30.52);
+        var transform = Cesium.Transforms.eastNorthUpToFixedFrame(center); //
+
+        // View in east-north-up frame
+        var camera = viewer.camera;
+        camera.constrainedAxis = Cesium.Cartesian3.UNIT_Z; //如果设置，照相机将无法在任何方向上绕过此轴。
+        camera.lookAtTransform(transform, new Cesium.Cartesian3(-120000.0, -120000.0, 120000.0));
+
+        // 显示这个参考框架(The X axis is red; Y is green; and Z is blue)
+        scene.primitives.add(new Cesium.DebugModelMatrixPrimitive({
+            modelMatrix : transform,
+            length : 100000.0
+        }));
+    }
+
+    function setHeadingPitchRoll() {
+
+        var camera = viewer.camera;
+        camera.setView({
+            destination : Cesium.Cartesian3.fromDegrees(114.31, 30.52, 1000.0),
+            orientation: {
+                heading : -Cesium.Math.PI_OVER_TWO,
+                pitch : -Cesium.Math.PI_OVER_FOUR,
+                roll : 0.0
+            }
+        });
+    }
+
+    function cameraEvents() {
+
+        viewer.camera.moveStart.addEventListener(function() {
+            console.log("moveStart");
+        });
+        viewer.camera.moveEnd.addEventListener(function() {
+            console.log("moveEnd");
+        });
+        viewer.camera.changed.addEventListener(function() {
+            console.log("Changed");
+        });
+    }
+
+    function losAngelesToTokyo() {
+        var camera = scene.camera;
+
+        camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(-117.729, 34.457, 10000.0),
+            duration: 5,
+            pitchAdjustHeight : 1000, // 如果摄像机飞行高于此值，调整俯仰航班向下看，并保持地球在视口。 pitch 为 -90°
+            orientation: {
+                heading: Cesium.Math.toRadians(-15.0),
+                pitch: -Cesium.Math.PI_OVER_FOUR, // -45°
+                roll: 0.0
+            },
+            complete: function () {
+                setTimeout(function () {
+                    camera.flyTo({
+                        destination: Cesium.Cartesian3.fromDegrees(139.8148, 35.7142, 20000.0),
+                        orientation: {
+                            heading: Cesium.Math.toRadians(15.0),
+                            pitch: Cesium.Math.toRadians(-60),
+                            roll: 0.0
+                        },
+                        duration: 5,
+                        pitchAdjustHeight : 1000, // 如果摄像机飞行高于此值，调整俯仰航班向下看，并保持地球在视口。 pitch 为 -90°
+                        flyOverLongitude: Cesium.Math.toRadians(60.0) // 在地球上的两点之间总有两种方法。这个选项强制摄像机选择战斗方向飞过那个经度。(俯冲的姿态，投射炸弹)
+                    });
+                }, 1000);
+            }
+        });
+    }
+
+
+</script>
+</body>
+</html>

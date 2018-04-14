@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>自定义terrain</title>
+    <link rel="stylesheet" href="http://localhost:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css">
+    <script type="text/javascript" src="http://localhost:8080/plugin/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="http://localhost:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #btnDiv{
+            position: absolute;
+            left: 10px;
+            top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id="btnDiv">
+    <button class="cesium-button" onclick="flyTo1()">Denali</button>
+    <button class="cesium-button" onclick="flyTo2()">Anchorage Area</button>
+    <button class="cesium-button" onclick="flyTo3()">Peaks</button>
+    <button class="cesium-button" onclick="flyTo4()">Riverbed</button>
+</div>
+<script>
+    var viewer = new Cesium.Viewer("cesiumContainer", {
+        animation: false, //是否创建动画小器件，左下角仪表
+        baseLayerPicker: false,//是否显示图层选择器,右上角按钮
+        fullscreenButton: false,//是否显示全屏按钮,右下角按钮
+        geocoder: false,//是否显示geocoder小器件，右上角查询按钮
+        homeButton: false,//是否显示Home按钮,右上角按钮
+        infoBox: true,//是否显示信息框
+        sceneModePicker: false,//是否显示3D/2D选择器 ,右上角按钮
+        selectionIndicator: false,//是否显示选取指示器组件，绿色选中框
+        timeline: false,//是否显示时间轴，底部
+        navigationHelpButton: false//是否显示帮助按钮，右上角按钮
+    });
+
+    // viewer.terrainProvider = new Cesium.TerrainProvider(); // 设置默认的DTM模型
+
+    viewer.terrainProvider = new Cesium.CesiumTerrainProvider({
+        // url : 'https://assets.agi.com/stk-terrain/v1/tilesets/world/tiles', // 两个DTM服务地址
+        url : 'http://assets.agi.com/stk-terrain/v1/tilesets/ArticDEM/tiles',
+        requestWaterMask : true,
+        requestVertexNormals : true
+    });
+
+    function flyTo1() {
+        viewer.scene.camera.flyTo({
+            destination : Cesium.Cartesian3.fromRadians(-2.6399828792482234, 1.0993550795541742, 5795),
+            orientation : {
+                heading : 3.8455,
+                pitch : -0.4535,
+                roll : 0.0
+            }
+        });
+    }
+    function flyTo2() {
+        viewer.scene.camera.flyTo({
+            destination : Cesium.Cartesian3.fromRadians(-2.610708034601548, 1.0671172431736584, 1900),
+            orientation : {
+                heading : 4.6,
+                pitch : -0.341,
+                roll : 0.0
+            }
+        });
+    }
+    function flyTo3() {
+        viewer.scene.camera.flyTo({
+            destination : Cesium.Cartesian3.fromRadians(-2.6928866820212813, 1.072394255273859, 3700),
+            orientation : {
+                heading : 1.6308222948889464,
+                pitch : -0.6473480165020193,
+                roll : 0.0
+            }
+        });
+    }
+    function flyTo4() {
+        viewer.scene.camera.flyTo({
+            destination : Cesium.Cartesian3.fromRadians(-2.6395623497608596, 1.0976443174490356, 2070),
+            orientation : {
+                heading : 6.068794108659519,
+                pitch : -0.08514161789475816,
+                roll : 0.0
+            }
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D模型赋色</title>
+    <link rel="stylesheet" href="http://localhost:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css">
+    <script type="text/javascript" src="http://localhost:8080/plugin/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="http://localhost:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #model {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(42, 42, 42, 0.8);
+            padding: 4px;
+            color: white;
+            border-radius: 4px;
+        }
+
+        #model input {
+            vertical-align: middle;
+            padding-top: 2px;
+            padding-bottom: 2px;
+        }
+
+        #model .header {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id="model">
+    <table>
+        <tbody>
+        <tr>
+            <td class="header">模型赋色</td>
+        </tr>
+        <tr>
+            <td>模式</td>
+            <td><select id="mode">
+                <option value="highlight">高亮</option>
+                <option value="replace">替换</option>
+                <option value="mix">混合</option>
+            </select></td>
+        </tr>
+        <tr>
+            <td>颜色</td>
+            <td><select id="color">
+                <option value="White">白色</option>
+                <option value="Red">红色</option>
+                <option value="Green">绿色</option>
+                <option value="Blue">蓝色</option>
+                <option value="Yellow">黄色</option>
+                <option value="Gray">灰色</option>
+            </select></td>
+        </tr>
+        <tr>
+            <td>透明度</td>
+            <td>
+                <input id="alpha" type="range" min="0.0" max="1.0" step="0.01" value="1">
+            </td>
+        </tr>
+        <tr>
+            <td>混合程度</td>
+            <td>
+                <input id="mixAmount" type="range" min="0.0" max="1.0" step="0.01" value="0.5" disabled="disabled">
+            </td>
+        </tr>
+        <tr>
+            <td class="header">模型轮廓</td>
+        </tr>
+        <tr>
+            <td>颜色</td>
+            <td><select id="silhouetteColor">
+                <option value="Red">红色</option>
+                <option value="Green">绿色</option>
+                <option value="Blue">蓝色</option>
+                <option value="Yellow">黄色</option>
+                <option value="Gray">灰色</option>
+            </select></td>
+        </tr>
+        <tr>
+            <td>透明度</td>
+            <td>
+                <input id="silhouetteAlpha" type="range" min="0.0" max="1.0" step="0.01" value="1">
+            </td>
+        </tr>
+        <tr>
+            <td>粗细</td>
+            <td>
+                <input id="silhouetteSize" type="range" min="0.0" max="10.0" step="0.01" value="1">
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<script>
+    var viewer = new Cesium.Viewer("cesiumContainer", {
+        animation: false, //是否创建动画小器件，左下角仪表
+        baseLayerPicker: false,//是否显示图层选择器,右上角按钮
+        fullscreenButton: false,//是否显示全屏按钮,右下角按钮
+        geocoder: false,//是否显示geocoder小器件，右上角查询按钮
+        homeButton: false,//是否显示Home按钮,右上角按钮
+        infoBox: true,//是否显示信息框，这个还没用到
+        sceneModePicker: false,//是否显示3D/2D选择器 ,右上角按钮
+        selectionIndicator: false,//是否显示选取指示器组件，绿色选中框
+        timeline: false,//是否显示时间轴，底部
+        navigationHelpButton: false,//是否显示帮助按钮，右上角按钮
+        imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
+            // url: "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" // 自定义底图
+            url:"https://server.hxct.com/server/rest/services//GoogleMap/MapServer"
+        })
+    });
+
+    // 添加模型
+    var position = Cesium.Cartesian3.fromDegrees(114.44024026393892, 30.44377150531985, 20);
+    var heading = Cesium.Math.toRadians(0);
+    var pitch = Cesium.Math.toRadians(0);
+    var roll = Cesium.Math.toRadians(0);
+    var hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
+    var orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+    var entity = viewer.entities.add(new Cesium.Entity({
+        name: "模型",
+        position: position,
+        orientation: orientation,
+        model: new Cesium.ModelGraphics({
+            uri: "../models/Cesium_Air.glb",
+            color: Cesium.Color.fromAlpha(Cesium.Color.WHITE, 1), // 模型颜色
+            colorBlendMode: Cesium.ColorBlendMode.HIGHLIGHT, // 模型显示模式
+            colorBlendAmount: 0.5, // 模型mix程度(只有mix模式下有效)
+            silhouetteColor: Cesium.Color.fromAlpha(Cesium.Color.RED, 1), // 轮廓颜色
+            silhouetteSize: 1 // 轮廓粗细
+        })
+    }));
+    viewer.trackedEntity = entity;
+
+    // 更换模型的三种渲染显示方式
+    $("#mode").on('change',function(){
+        var mode = $(this).find("option:selected").val();
+        if (mode === "mix"){
+            $("#mixAmount").attr('disabled',false);
+        }else {
+            $("#mixAmount").attr('disabled',true);
+        }
+        entity.model.colorBlendMode = Cesium.ColorBlendMode[mode.toUpperCase()]; // 模式
+        entity.model.colorBlendAmount = $("#mixAmount").val(); // 只有mix模式下生效的mix程度
+    });
+
+    // 更改模型颜色
+    $("#color").on('change',function(){
+        var color = $(this).find("option:selected").val();
+        var alpha = $("#alpha").val();
+        entity.model.color = Cesium.Color.fromAlpha(Cesium.Color[color.toUpperCase()], parseFloat(alpha));
+    });
+
+    // 更改模型透明度
+    $("#alpha").on('input propertychange',function(){
+        var alpha = $(this).val();
+        var color = $("#color").find("option:selected").val();
+        entity.model.color = Cesium.Color.fromAlpha(Cesium.Color[color.toUpperCase()], parseFloat(alpha));
+    });
+
+    // 更改混合程度
+    $("#mixAmount").on("input propertychange", function () {
+        entity.model.colorBlendAmount = $(this).val(); // 只有mix模式下生效的mix程度
+    });
+
+    // 更改轮廓颜色
+    $("#silhouetteColor").on("change", function () {
+        var color = $(this).find("option:selected").val();
+        var alpha = $("#silhouetteAlpha").val();
+        entity.model.silhouetteColor = Cesium.Color.fromAlpha(Cesium.Color[color.toUpperCase()], parseFloat(alpha));
+    });
+
+    // 更改轮廓透明度
+    $("#silhouetteAlpha").on('input propertychange',function(){
+        var alpha = $(this).val();
+        var color = $("#silhouetteColor").find("option:selected").val();
+        entity.model.silhouetteColor = Cesium.Color.fromAlpha(Cesium.Color[color.toUpperCase()], parseFloat(alpha));
+    });
+
+    // 更改轮廓粗细宽度
+    $("#silhouetteSize").on('input propertychange',function(){
+        var size = $(this).val();
+        entity.model.silhouetteSize = parseFloat(size);
+    });
+
+</script>
+</body>
+</html>

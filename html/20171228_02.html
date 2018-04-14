@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Tiles 要素选择</title>
+    <link rel="stylesheet" href="http://localhost:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css">
+    <script type="text/javascript" src="http://localhost:8080/plugin/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="http://localhost:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #tip{
+            font-size: 12px;
+            position: absolute;
+            height: 20px;
+            line-height: 20px;
+            background-color: black;
+            color: white;
+            border-radius: 4px;
+            padding: 4px;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id="tip"></div>
+<script>
+    var viewer = new Cesium.Viewer("cesiumContainer", {
+        animation: false, //是否创建动画小器件，左下角仪表
+        baseLayerPicker: false,//是否显示图层选择器,右上角按钮
+        fullscreenButton: false,//是否显示全屏按钮,右下角按钮
+        geocoder: false,//是否显示geocoder小器件，右上角查询按钮
+        homeButton: false,//是否显示Home按钮,右上角按钮
+        infoBox: true,//是否显示信息框
+        sceneModePicker: false,//是否显示3D/2D选择器 ,右上角按钮
+        selectionIndicator: false,//是否显示选取指示器组件，绿色选中框
+        timeline: false,//是否显示时间轴，底部
+        navigationHelpButton: false//是否显示帮助按钮，右上角按钮
+    });
+
+    // 定义初始视角的位置和方位
+    var initialPosition = Cesium.Cartesian3.fromDegrees(-74.01881302800248, 40.69114333714821, 753); // 目标坐标
+    var initialOrientation = new Cesium.HeadingPitchRoll.fromDegrees(21, -21, 0); // 方位
+
+    // 设置camera的位置
+    viewer.scene.camera.setView({
+        destination: initialPosition,
+        orientation: initialOrientation,
+        endTransform: Cesium.Matrix4.IDENTITY // 代表相机参考框架的变换矩阵*********不明白，写了跟没写没区别*********
+    });
+
+    // 加载3D Tiles 图层
+    var tileSet = new Cesium.Cesium3DTileset({
+        url: "https://beta.cesium.com/api/assets/1461?access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkYWJmM2MzNS02OWM5LTQ3OWItYjEyYS0xZmNlODM5ZDNkMTYiLCJpZCI6NDQsImFzc2V0cyI6WzE0NjFdLCJpYXQiOjE0OTkyNjQ3NDN9.vuR75SqPDKcggvUrG_vpx0Av02jdiAxnnB1fNf-9f7s"
+    });
+    viewer.scene.primitives.add(tileSet);
+
+    // 存储点击选中的feature
+    var selectFeature = undefined;
+    // 存储移动选中的feature
+    var movedFeature = undefined;
+
+    // 注册屏幕空间事件
+    viewer.screenSpaceEventHandler.setInputAction(function (clickEvent) {
+        var feature = viewer.scene.pick(clickEvent.position); // When a feature of a 3D Tiles tileset is picked, pick returns a Cesium3DTileFeature object.
+        if (Cesium.defined(feature) && feature instanceof Cesium.Cesium3DTileFeature){
+            // 显示该feature
+            feature.color = Cesium.Color.LIME; // 更改feature的颜色
+
+            // 重置之前的选中的要素
+            if (Cesium.defined(selectFeature)){
+                selectFeature.color = new Cesium.Color();
+            }
+            // 更新选中的feature
+            selectFeature = feature;
+            movedFeature = undefined;
+
+            // 获取该feature的属性信息
+            var propertyNames = feature.getPropertyNames(); // 得到所有的属性名称
+            var length = propertyNames.length;
+            var propertyHtml = "";
+            for (var i = 0; i < length; ++i) {
+                var propertyName = propertyNames[i];
+                propertyHtml += "<tr><td>" + propertyName + "</td><td>" + feature.getProperty(propertyName) + "</td></tr>";
+            }
+            // 显示属性面板(infoBox = true)
+            var selelctEntity = new Cesium.Entity();
+            selelctEntity.name = feature.getProperty("name");
+            selelctEntity.description = "<table class='cesium-infoBox-defaultTable'><tbody> " + propertyHtml + " </tbody></table>";
+            viewer.selectedEntity = selelctEntity; // 这个的地方的selectedEntity的属性跟模型显示无关，只是对view的infoBox属性设置为true有关，出现选中的列表而已
+        }
+    },Cesium.ScreenSpaceEventType.LEFT_CLICK); // 左击
+
+    viewer.screenSpaceEventHandler.setInputAction(function (moveEvent) {
+        var feature = viewer.scene.pick(moveEvent.endPosition); // pick a 3D feature
+        if (Cesium.defined(feature)){
+            // 显示tip
+            $("#tip").html(feature.getProperty("name"));
+            // $("#tip").css("top", moveEvent.endPosition.y); // 这个会跟鼠标箭头有点冲突覆盖，使用bottom
+            $("#tip").css("bottom", viewer.canvas.height - moveEvent.endPosition.y);
+            $("#tip").css("left", moveEvent.endPosition.x);
+            $("#tip").show();
+
+            if (feature === selectFeature){
+                return;
+            }else {
+                // 重置之前的选中的要素
+                if (Cesium.defined(movedFeature)){
+                    movedFeature.color = new Cesium.Color();
+                }
+                // 更换颜色
+                feature.color = Cesium.Color.YELLOW; // 更改feature的颜色
+                // 更新选中的feature
+                movedFeature = feature;
+            }
+        }else{
+            $("#tip").hide();
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE); // 移动
+
+</script>
+</body>
+</html>

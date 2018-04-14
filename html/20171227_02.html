@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>添加3D模型</title>
+    <link rel="stylesheet" href="http://localhost:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css">
+    <script type="text/javascript" src="http://localhost:8080/plugin/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="http://localhost:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #model{
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            height: 30px;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<select id="model">
+    <option>--选择模型--</option>
+    <option value="Cesium_Air">飞机</option>
+    <option value="Cesium_Ground">陆上车辆</option>
+    <option value="CesiumBalloon">热气球</option>
+    <option value="CesiumMilkTruck">奶槽车</option>
+    <option value="Cesium_Man">皮肤人</option>
+</select>
+<script>
+    var viewer = new Cesium.Viewer("cesiumContainer", {
+        animation: false, //是否创建动画小器件，左下角仪表
+        baseLayerPicker: false,//是否显示图层选择器,右上角按钮
+        fullscreenButton: false,//是否显示全屏按钮,右下角按钮
+        geocoder: false,//是否显示geocoder小器件，右上角查询按钮
+        homeButton: false,//是否显示Home按钮,右上角按钮
+        infoBox : true,//是否显示信息框，这个还没用到
+        sceneModePicker: false,//是否显示3D/2D选择器 ,右上角按钮
+        selectionIndicator : false,//是否显示选取指示器组件，绿色选中框
+        timeline: false,//是否显示时间轴，底部
+        navigationHelpButton: false,//是否显示帮助按钮，右上角按钮
+        imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
+            url:"https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" // 自定义底图
+            // url:"https://server.hxct.com/server/rest/services//GoogleMap/MapServer"
+        })
+    });
+    $("#model").on("change",function () {
+        loadModel($(this).find("option:selected").text(), $(this).val());
+    });
+
+
+    function loadModel(name,value) {
+        if (value === ""){
+            return false;
+        }
+        viewer.entities.removeAll();
+        var position = Cesium.Cartesian3.fromDegrees(114.44024026393892, 30.44377150531985, 0); // 位置
+        var heading = Cesium.Math.toRadians(0); // 朝向
+        var pitch = Cesium.Math.toRadians(0); // 俯角
+        var roll = Cesium.Math.toRadians(0); // 旋绕
+        var hpr = new Cesium.HeadingPitchRoll(heading,pitch,roll);
+        var orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+        var entity = new Cesium.Entity({
+            name: name,
+            position: position,
+            orientation: orientation, // 这个地方的orientation不能使用object类型
+            model: new Cesium.ModelGraphics({
+                uri:"../models/" + value + ".glb"
+            })
+        });
+        viewer.entities.add(entity); // 场景中添加三维对象
+        viewer.trackedEntity = entity; // 设置camera捕捉的目标对象(居中对象)，不设置的话，物体会添加到viewer中，但是不会居中该对象
+    }
+</script>
+</body>
+</html>
