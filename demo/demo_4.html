@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>几何体</title>
+    <script type="text/javascript" src="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
+          type="text/css"/>
+    <style>
+        html, body, #map3d {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+<div id="map3d"></div>
+<script>
+    var viewer = new Cesium.Viewer('map3d', {
+        baseLayerPicker: false,
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        })
+    });
+    var scene = viewer.scene;
+
+    // 用entity创建一个geometry
+    // var entity = viewer.entities.add({
+    //     rectangle: {
+    //         coordinates: Cesium.Rectangle.fromDegrees(-100.0, 20.0, -90.0, 30.0),
+    //         material: new Cesium.StripeMaterialProperty({
+    //             evenColor: Cesium.Color.WHITE,
+    //             oddColor: Cesium.Color.BLUE,
+    //             repeat: 5 // 重复5条
+    //         })
+    //     }
+    // });
+    // for (var lon = -180.0; lon < 180.0; lon += 5.0) {
+    //     for (var lat = -85.0; lat < 85.0; lat += 5.0) {
+    //         viewer.entities.add({
+    //             rectangle: new Cesium.RectangleGraphics({
+    //                 coordinates: Cesium.Rectangle.fromDegrees(lon, lat, lon + 5.0, lat + 5.0),
+    //                 material: new Cesium.ColorMaterialProperty(Cesium.Color.fromRandom({alpha: 0.5})),
+    //                 outline: true,
+    //                 outlineColor: Cesium.Color.WHITE,
+    //                 outlineWidth: 1.5
+    //             })
+    //
+    //         })
+    //     }
+    // }
+
+    //
+    // viewer.trackedEntity = entity;
+
+    // var primitive = new Cesium.Primitive({
+    //     geometryInstances: new Cesium.GeometryInstance({
+    //         geometry: new Cesium.RectangleGeometry({
+    //             rectangle: Cesium.Rectangle.fromDegrees(-100.0, 20.0, -90.0, 30.0)
+    //         })
+    //     }),
+    //     appearance: new Cesium.MaterialAppearance({
+    //         material: Cesium.Material.fromType(Cesium.Material.StripeType)
+    //     })
+    // });
+    //
+    // viewer.scene.primitives.add(primitive);
+
+    var instances = [];
+    //循环创建随机颜色的矩形
+    for (var lon = -180.0; lon < 180.0; lon += 5.0) {
+        for (var lat = -85.0; lat < 85.0; lat += 5.0) {
+            instances.push(new Cesium.GeometryInstance({
+                id: Cesium.Math.nextRandomNumber(),
+                geometry: new Cesium.RectangleGeometry({
+                    rectangle: Cesium.Rectangle.fromDegrees(lon, lat, lon + 5.0, lat + 5.0),
+                    vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT
+                }),
+                attributes: {
+                    color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.fromRandom({alpha: 0.5}))
+                }
+            }));
+        }
+    }
+
+    scene.primitives.add(new Cesium.Primitive({
+        geometryInstances: instances,
+        appearance: new Cesium.PerInstanceColorAppearance() //使用PerInstanceColorAppearance不同颜色来遮蔽每个实例
+    }));
+
+    //获取屏幕事件管理器
+    viewer.screenSpaceEventHandler.setInputAction(function (movement) {
+        var pick = scene.pick(movement.endPosition);
+        if (Cesium.defined(pick)) {
+            console.log(pick.id);
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+    // 这样的写法自然是有优点也有缺点的
+    //
+    // 优点：
+    //
+    // 性能 - 当绘制大量静态图元时，直接使用几何形状可以将它们组合成单个几何体，以减少CPU开销并更好地利用GPU。并且组合是在网络上完成的，可以保持UI的响应。
+    // 灵活性 - 基元组合几何和外观。通过解耦，我们可以独立地修改。我们可以添加与许多不同外观兼容的新几何体，反之亦然。
+    // 低级访问 - 外观提供了接近于渲染器的访问，可以直接使用渲染器的所有细节(Appearances provide close-to-the-metal access to rendering without having to worry about all the details of using the Renderer directly)。外观使其易于：
+    // 编写完整的GLSL顶点和片段着色器。
+    // 使用自定义渲染状态。
+    //
+    // 缺点：
+    //
+    // 代码量增大，并且需要使用者对这方面有更深入的理解。
+    // 组合几何可以使用静态数据，不一定是动态数据。
+    // primitives 的抽象级别适合于映射应用程序;几何图形和外观的抽象层次接近传统的3D引擎(Primitives are at the level of abstraction appropriate for mapping apps; geometries and appearances have a level of abstraction closer to a traditional 3D engine)（感觉翻译的不太好的地方都给上了原文）
+
+</script>
+</body>
+</html>

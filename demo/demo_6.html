@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>雨天粒子效果</title>
+    <script type="text/javascript" src="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
+          type="text/css"/>
+    <style>
+        html, body, #map3d {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+<div id="map3d"></div>
+<script>
+    var viewer = new Cesium.Viewer('map3d', {
+        baseLayerPicker: false,
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        })
+    });
+
+    var scene = viewer.scene;
+    scene.debugShowFramesPerSecond = true;
+
+    viewer.camera.setView({
+        destination: Cesium.Cartesian3.fromDegrees(114.05, 30.05, 20),
+        orientation: {
+            heading: Cesium.Math.toRadians(90.0), // east, default value is 0.0 (north)
+            pitch: Cesium.Math.toRadians(-3),    // default value (looking down)
+            roll: 0.0                             // default value
+        }
+    });
+
+
+    // 随机的entity
+    var entities = [];
+    for (var lon = 114.0; lon < 114.1; lon += 0.01) {
+        for (var lat = 30.0; lat < 30.1; lat += 0.01) {
+            entities.push(viewer.entities.add({
+                position: Cesium.Cartesian3.fromDegrees((lon + lon + 0.01) / 2, (lat + lat + 0.01) / 2, 10000),
+                point: {
+                    pixelSize: 5,
+                    color: Cesium.Color.RED,
+                    outlineColor: Cesium.Color.WHITE,
+                    outlineWidth: 2,
+                    show: false
+                }
+            }));
+        }
+    }
+
+    for (var i = 0; i < entities.length; i++) {
+        viewer.scene.primitives.add(new Cesium.ParticleSystem({
+            image: 'rainy.png',
+            startColor: Cesium.Color.GHOSTWHITE,
+            endColor: Cesium.Color.GHOSTWHITE,
+            startScale: 1,
+            endScale: 1,
+            life: 20,
+            speed: Math.floor(Math.random() * 20 + 1),//随机速度
+            width: 10,  // 设置以像素为单位的粒子的最小和最大宽度
+            height: 10, //设置粒子的最小和最大高度（以像素为单位）。
+            rate: 1, //每秒发射的粒子数量
+            lifeTime: 16, //多长时间的粒子系统将以秒为单位发射粒子
+            loop: true, //是否粒子系统应该在完成时循环它的爆发
+            emitter: new Cesium.CircleEmitter(0.5), //此系统的粒子发射器  共有 BoxEmitter,CircleEmitter,ConeEmitter,SphereEmitter 几类
+            emitterModelMatrix: computeEmitterModelMatrix(), // 4x4转换矩阵，用于在粒子系统本地坐标系中转换粒子系统发射器
+            modelMatrix: computeModelMatrix(entities[i], Cesium.JulianDate.now()), // 4x4转换矩阵，可将粒子系统从模型转换为世界坐标
+            forces: [applyGravity] // 强制回调函数--例子：这是添加重力效果
+        }))
+    }
+
+    // 模型位置
+    function computeModelMatrix(entity, time) {
+        var position = Cesium.Property.getValueOrUndefined(entity.position, time, new Cesium.Cartesian3());
+        if (!Cesium.defined(position)) {
+            return undefined;
+        }
+        var orientation = Cesium.Property.getValueOrUndefined(entity.orientation, time, new Cesium.Quaternion());
+        var modelMatrix = null;
+        if (!Cesium.defined(orientation)) {
+            modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(position, undefined, new Cesium.Matrix4());
+        } else {
+            modelMatrix = Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromQuaternion(orientation, new Cesium.Matrix3()), position, modelMatrix);
+        }
+        return modelMatrix;
+    }
+
+    function computeEmitterModelMatrix() {
+        var hpr = Cesium.HeadingPitchRoll.fromDegrees(0, 0, 0, new Cesium.HeadingPitchRoll());
+        var trs = new Cesium.TranslationRotationScale();
+        trs.translation = Cesium.Cartesian3.fromElements(0, 0, 0, new Cesium.Cartesian3());
+        trs.rotation = Cesium.Quaternion.fromHeadingPitchRoll(hpr, new Cesium.Quaternion());
+        return Cesium.Matrix4.fromTranslationRotationScale(trs, new Cesium.Matrix4());
+    }
+
+    function applyGravity(particle, dt) {
+        var position = particle.position;
+        var gravityVector = Cesium.Cartesian3.normalize(position, new Cesium.Cartesian3());
+        Cesium.Cartesian3.multiplyByScalar(gravityVector, -100 * dt, gravityVector);
+        particle.velocity = Cesium.Cartesian3.add(particle.velocity, gravityVector, particle.velocity);
+    }
+</script>
+</body>
+</html>

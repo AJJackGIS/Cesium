@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>实体3D模型</title>
+    <script type="text/javascript" src="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
+          type="text/css"/>
+    <style>
+        html, body, #map3d {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+<div id="map3d"></div>
+<script>
+    var viewer = new Cesium.Viewer('map3d', {
+        baseLayerPicker: false,
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        })
+    });
+
+    // 通过entity的方式加载3d模型
+    var entity = viewer.entities.add({
+        position : Cesium.Cartesian3.fromDegrees(-123.0744619, 44.0503706),
+        model : {
+            uri : 'Cesium_Ground.gltf',
+            //模型颜色，透明度
+            // color : Cesium.Color.fromAlpha(Cesium.Color.RED, parseFloat(0.5)),
+            // //轮廓线
+            // silhouetteColor : Cesium.Color.fromAlpha(Cesium.Color.GREEN, parseFloat(0.5)),
+            // //模型样式['Highlight', 'Replace', 'Mix']
+            // colorBlendMode : Cesium.ColorBlendMode.MIX,
+            // //colorBlendAmount需要选择mix后将colorBlendAmountEnabled设置为true才能使用
+            // colorBlendAmountEnabled : true,
+            // colorBlendAmount : parseFloat(0.8)
+        }
+    });
+    viewer.trackedEntity = entity;
+
+    // 通过primitives的方式加载
+    // var origin = Cesium.Cartesian3.fromDegrees(-123.0744619, 44.0503706, 0);
+    // var modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
+    // var model = viewer.scene.primitives.add(Cesium.Model.fromGltf({
+    //     url: 'Cesium_Ground.gltf',
+    //     modelMatrix: modelMatrix,
+    //     minimumPixelsSize: 512,
+    //     maximumScale: 200000
+    // }));
+    // viewer.camera.setView({
+    //     destination: Cesium.Cartesian3.fromDegrees(-123.0744619, 44.0503706, 50),
+    //     orientation: {
+    //         heading: Cesium.Math.toRadians(0.0), //默认值
+    //         pitch: Cesium.Math.toRadians(-90.0), // 默认值
+    //         roll: 0.0 //默认值
+    //     }
+    // });
+    // // 当模型准备渲染时，以半速度播放所有动画
+    // Cesium.when(model.readyPromise).then(function (model) {
+    //     model.activeAnimations.addAll({
+    //         //这个半速是相对于Cesium的clock来说的
+    //         speedup: 0.5,
+    //         //永久重复
+    //         loop: Cesium.ModelAnimationLoop.REPEAT,
+    //         // reverse : true // Play in reverse
+    //     });
+    // }).otherwise(function (error) {
+    //     window.alert(error);
+    // });
+    // viewer.extend(Cesium.viewerCesiumInspectorMixin);
+
+    viewer.screenSpaceEventHandler.setInputAction(function (movement) {
+            //当鼠标移动时获取移动的末位置
+            var pick = viewer.scene.pick(movement.position);
+            //简单来说就是这个点上有东西，那就打log
+            if (Cesium.defined(pick) && Cesium.defined(pick.node) && Cesium.defined(pick.mesh)) {
+                console.log('node: ' + pick.node.name + '. mesh: ' + pick.mesh.name);
+            }
+        },
+        Cesium.ScreenSpaceEventType.LEFT_CLICK
+    );
+
+</script>
+</body>
+</html>

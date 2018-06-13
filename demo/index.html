@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>三维地球</title>
+    <script type="text/javascript" src="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
+          type="text/css"/>
+    <style>
+        html, body, #map3d {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            cursor: default;
+        }
+
+        #tip {
+            position: absolute;
+            top: 0;
+            height: 40px;
+            width: 100%;
+            padding-top: 10px;
+            text-align: center;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div id="map3d"></div>
+<div id="tip"></div>
+<script>
+    var viewer = new Cesium.Viewer('map3d', {
+        animation: true, //是否创建动画小器件，左下角仪表
+        baseLayerPicker: false,//是否显示图层选择器,右上角按钮
+        fullscreenButton: false,//是否显示全屏按钮,右下角按钮
+        geocoder: false,//是否显示geocoder小器件，右上角查询按钮
+        homeButton: true,//是否显示Home按钮,右上角按钮
+        infoBox: true,//是否显示信息框
+        sceneModePicker: false,//是否显示3D/2D选择器 ,右上角按钮
+        selectionIndicator: false,//是否显示选取指示器组件，绿色选中框
+        timeline: true,//是否显示时间轴，底部
+        navigationHelpButton: false,//是否显示帮助按钮，右上角按钮
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}',
+            tilingScheme: new Cesium.WebMercatorTilingScheme(),
+            minimumLevel: 1,
+            maximumLevel: 22
+        }), //地图底图数据提供==谷歌影像
+        // imageryProvider : Cesium.createOpenStreetMapImageryProvider({
+        //     url : 'https://a.tile.openstreetmap.org/'
+        // }), //地图底图数据提供==OpenStreetMap
+        terrainProvider: new Cesium.CesiumTerrainProvider({
+            url: "https://www.supermapol.com/iserver/services/3D-stk_terrain/rest/realspace/datas/info/data/path/",
+            requestWaterMask: true,
+            requestVertexNormals: true
+        }) //地球地形数据提供==超图
+        // terrainProvider: new Cesium.CesiumTerrainProvider({
+        //     url: 'http://assets.agi.com/stk-terrain/v1/tilesets/world/tiles',
+        //     requestWaterMask : true,
+        //     requestVertexNormals : true
+        // }) //地球地形数据提供==STK
+    });
+    viewer.scene.globe.depthTestAgainstTerrain = true;
+
+    // viewer.camera.flyTo({
+    //     destination: Cesium.Cartesian3.fromDegrees(111.39421486559591, 29.625767204030012, 283.15477312618685),
+    //     orientation: {
+    //         heading: 5.184849560146404,
+    //         pitch: -0.21359841552976522,
+    //         roll: 6.280559164314155
+    //     }
+    // });
+
+    //homebutton默认跳转位置
+    Cesium.Camera.DEFAULT_VIEW_RECTANGLE = Cesium.Rectangle.fromDegrees(89.5, 20.4, 110.4, 61.2);
+
+    //得到当前三维场景
+    var scene = viewer.scene;
+
+    //得到当前三维场景的椭球体
+    var ellipsoid = scene.globe.ellipsoid;
+
+    // 注册屏幕空间事件
+    viewer.screenSpaceEventHandler.setInputAction(function (movement) {
+
+        //通过指定的椭球或者地图对应的坐标系，将鼠标的二维坐标转换为对应椭球体三维坐标
+        var cartesian = viewer.camera.pickEllipsoid(movement.endPosition, ellipsoid);
+        if (cartesian) {
+            //将笛卡尔坐标转换为地理坐标
+            var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+            //将弧度转为度的十进制度表示
+            var longitudeString = Cesium.Math.toDegrees(cartographic.longitude).toFixed(4);
+            var latitudeString = Cesium.Math.toDegrees(cartographic.latitude).toFixed(4);
+            var height = viewer.camera.positionCartographic.height.toFixed(2);
+
+            document.getElementById("tip").innerText = "经度：" + longitudeString + ', 纬度：' + latitudeString + ", 高度：" + height + " 米";
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE); // 移动
+
+    /**
+     * 获取当前视角
+     */
+    function getCamera() {
+        var heading = scene.camera.heading;
+        var pitch = scene.camera.pitch;
+        var roll = scene.camera.roll;
+        var position = scene.camera.position;
+        var ellipsoid = scene.globe.ellipsoid;
+        var cartographic = ellipsoid.cartesianToCartographic(position);
+        var lat = Cesium.Math.toDegrees(cartographic.latitude);
+        var lon = Cesium.Math.toDegrees(cartographic.longitude);
+        var height = cartographic.height;
+        console.log(heading);
+        console.log(pitch);
+        console.log(roll);
+        console.log(lon);
+        console.log(lat);
+        console.log(height);
+    }
+
+    //
+    // var e = viewer.entities.add({
+    //     polygon : {
+    //         hierarchy : {
+    //             positions : [new Cesium.Cartesian3.fromDegrees(111.3861, 29.6229, 500),
+    //                 new Cesium.Cartesian3.fromDegrees(111.3861, 29.6262, 500),
+    //                 new Cesium.Cartesian3.fromDegrees(111.3883, 29.6337, 500),
+    //                 new Cesium.Cartesian3.fromDegrees(111.3791, 29.6343, 500)]
+    //         },
+    //         material : Cesium.Color.YELLOW.withAlpha(0.3)
+    //     }
+    // });
+
+    // viewer.zoomTo(e);
+
+
+    Cesium.Math.setRandomNumberSeed(3);
+
+    var start = Cesium.JulianDate.fromDate(new Date(2018, 6, 5, 8));
+    var stop = Cesium.JulianDate.addSeconds(start, 360, new Cesium.JulianDate()); // 设置总时长360秒
+
+    viewer.clock.startTime = start.clone();
+    viewer.clock.stopTime = stop.clone();
+    viewer.clock.currentTime = start.clone();
+    viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
+    viewer.clock.multiplier = 10; // 10倍速率播放
+
+    viewer.timeline.zoomTo(start, stop);
+
+    function computeCirclularFlight(lon, lat, radius) {
+        var property = new Cesium.SampledPositionProperty();
+        for (var i = 0; i <= 360; i += 45) {
+
+            // 根据360弧度，每45°一个拐点，随机生成8个点
+            var radians = Cesium.Math.toRadians(i);
+            var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate()); // 在总时长360秒中，设置中间点
+
+            // 生成随机的坐标
+            var position = Cesium.Cartesian3.fromDegrees(lon + (radius * 1.5 * Math.cos(radians)), lat + (radius * Math.sin(radians)), Cesium.Math.nextRandomNumber() * 500 + 1750);
+
+            // 添加每一个链接点的信息，到达的时间以及坐标位置
+            property.addSample(time, position);
+
+            // 链接点
+            // viewer.entities.add({
+            //     position: position,
+            //     point: {
+            //         pixelSize: 8,
+            //         color: Cesium.Color.TRANSPARENT,
+            //         outlineColor: Cesium.Color.YELLOW,
+            //         outlineWidth: 3
+            //     }
+            // });
+        }
+        return property;
+    }
+
+    var position = computeCirclularFlight(111.3861, 29.6262, 0.03);
+
+    var entity = viewer.entities.add({
+
+        //Set the entity availability to the same interval as the simulation time.
+        availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+            start : start,
+            stop : stop
+        })]), //****************注意这里是动画集合
+
+        //Use our computed positions
+        position : position, // 点集
+
+        //Automatically compute orientation based on position movement.
+        orientation : new Cesium.VelocityOrientationProperty(position),
+
+        //Load the Cesium plane model to represent the entity
+        model : {
+            uri : 'Cesium_Air.gltf',
+            minimumPixelSize : 64
+        }
+
+        //Show the path as a pink line sampled in 1 second increments.
+        // path : {
+        //     resolution : 1,
+        //     material : new Cesium.PolylineGlowMaterialProperty({
+        //         glowPower : 0.1,
+        //         color : Cesium.Color.YELLOW
+        //     }),
+        //     width : 10
+        // }
+    });
+
+    viewer.trackedEntity = entity;
+
+    //viewer.zoomTo(viewer.entities, new Cesium.HeadingPitchRange(Cesium.Math.toRadians(-90), Cesium.Math.toRadians(-15), 7500));
+
+    entity.position.setInterpolationOptions({
+        interpolationDegree : 2,
+        interpolationAlgorithm : Cesium.HermitePolynomialApproximation
+    });
+
+</script>
+</body>
+</html>

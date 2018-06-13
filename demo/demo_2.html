@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>图像和地形</title>
+    <script type="text/javascript" src="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
+          type="text/css"/>
+    <style>
+        html, body, #map3d {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+<div id="map3d"></div>
+<script>
+    var viewer = new Cesium.Viewer('map3d', {
+        baseLayerPicker: false,
+        // Google
+        // imageryProvider: new Cesium.UrlTemplateImageryProvider({
+        //     url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        // })
+        // ArcGIS
+        // imageryProvider : new Cesium.ArcGisMapServerImageryProvider({
+        //     // url : 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+        //     url : 'http://server.arcgisonline.com/ArcGIS/rest/services/ESRI_Imagery_World_2D/MapServer'
+        // }),
+        // BingMaps
+        // imageryProvider: new Cesium.BingMapsImageryProvider({
+        //     url: 'https://dev.virtualearth.net',
+        //     key: 'Ao42l-0u7fJXMmQSGY0_5zW6kfuHPeTtanya4rs8bItYH982UV42_xNccLDq70lY',
+        //     mapStyle: Cesium.BingMapsStyle.AERIAL
+        // })
+        // OSM
+        // imageryProvider: Cesium.createOpenStreetMapImageryProvider({
+        //     url : 'https://a.tile.openstreetmap.org/'
+        // })
+        // imageryProvider: new Cesium.GoogleEarthEnterpriseImageryProvider({
+        //     metadata : new Cesium.GoogleEarthEnterpriseMetadata({
+        //         url:'http://www.earthenterprise.org/3d'
+        //     })
+        // })
+        imageryProvider: new Cesium.WebMapTileServiceImageryProvider({
+            url: "http://t0.tianditu.com/img_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=img&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default&format=tiles",
+            layer: "tdtBasicLayer",
+            style: "default",
+            format: "image/jpeg",
+            tileMatrixSetID: "GoogleMapsCompatible",
+            show: false
+        })
+    });
+
+    //全球影像中文注记服务
+    viewer.imageryLayers.addImageryProvider(new Cesium.WebMapTileServiceImageryProvider({
+        url: "http://t0.tianditu.com/cia_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=cia&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default.jpg",
+        layer: "tdtAnnoLayer",
+        style: "default",
+        format: "image/jpeg",
+        tileMatrixSetID: "GoogleMapsCompatible",
+        show: false
+    }));
+
+    // var blackMarble = viewer.imageryLayers.addImageryProvider(Cesium.createTileMapServiceImageryProvider({
+    //     url : 'https://cesiumjs.org/tilesets/imagery/blackmarble',
+    //     maximumLevel : 8,
+    //     flipXY : true,
+    //     credit : 'Black Marble imagery courtesy NASA Earth Observatory'
+    // }));
+    //
+    // //50%透明度
+    // blackMarble.alpha  = 0.8;
+    // //两倍亮度
+    // blackMarble.brightness = 2.0;
+
+    // defaultAlpha 和 defaultBrightness 是 ImageryProvider的属性
+
+    viewer.imageryLayers.addImageryProvider(new Cesium.SingleTileImageryProvider({ // 单张图片，适合雷达卫星图，视频贴图
+        url : 'Cesium_Logo_Color_Overlay.png',
+        rectangle : Cesium.Rectangle.fromDegrees(-75.0, 28.0, -67.0, 29.75)
+    }));
+
+    var terrainProvider = new Cesium.CesiumTerrainProvider({
+        url : 'https://assets02.agi.com/stk-terrain/v1/tilesets/world/tiles',
+        //请求水波纹效果
+        requestWaterMask: true,
+        //请求照明
+        requestVertexNormals: true
+    });
+    viewer.terrainProvider = terrainProvider;
+
+    //开启照明
+    // viewer.scene.globe.enableLighting = true;
+
+</script>
+</body>
+</html>

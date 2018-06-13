@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+    var particleCanvas = document.createElement('canvas');
+    particleCanvas.width = 200;
+    particleCanvas.height = 200;
+    var context2D = particleCanvas.getContext('2d');
+    context2D.beginPath();
+    context2D.arc(100, 75, 50, 0, 2 * Math.PI);
+    context2D.closePath();
+    context2D.stroke();
+    // context2D.fillStyle = 'rgb(255, 255, 255)';
+    // context2D.fill();
+    document.body.appendChild(particleCanvas);
+</script>
+</body>
+</html>

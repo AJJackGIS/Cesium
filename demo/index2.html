@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>三维地球</title>
+    <script type="text/javascript" src="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
+          type="text/css"/>
+    <style>
+        html, body, #map3d {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+<div id="map3d"></div>
+<script>
+    var viewer = new Cesium.Viewer('map3d', {
+        animation: true,
+        baseLayerPicker: false,
+        homeButton: false,
+        timeline: true,
+        navigationHelpButton: false,
+        sceneModePicker: false,
+        geocoder: false,
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'
+        })
+        // terrainProvider: new Cesium.CesiumTerrainProvider({
+        //     url: 'http://assets.agi.com/stk-terrain/v1/tilesets/world/tiles',
+        //     requestWaterMask: true,
+        //     requestVertexNormals: true
+        // })
+    });
+
+    viewer.scene.globe.depthTestAgainstTerrain = true;
+
+    var initialPosition = Cesium.Cartesian3.fromDegrees(114.43070254998972, 30.43085428114166, 2423.785344624202);
+    var initialOrientation = new Cesium.HeadingPitchRoll(6.283185307179583, -0.7853986374096347, 6.283185307179586);
+    viewer.scene.camera.setView({
+        destination: initialPosition,
+        orientation: initialOrientation,
+        endTransform: Cesium.Matrix4.IDENTITY
+    });
+
+    var tileSet = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
+        url: 'http://10.129.56.56:8080/model/build2/tileset.json'
+    }));
+
+    tileSet.style = new Cesium.Cesium3DTileStyle({
+        color: {
+            conditions: [
+                ["${height} >= 100", "rgba(255,105,180,0.8)"],
+                ["${height} >= 50", "rgba(106,90,205,0.8)"],
+                ["${height} >= 25", "rgba(60,179,113,0.8)"],
+                ["${height} >= 10", "rgba(255,215,0,0.8)"],
+                ["true", "rgb(173,255,47)"]
+            ]
+        },
+        show: '${height} > 0',
+        meta: {
+            description: '"Building id ${fid} has height ${height}."'
+        }
+    });
+
+    var TOTAL_TIME = 3000;
+
+    // 地上的
+    var stops = [
+        {x: 114.43786815503078, y: 30.441396791518397, z: 0},
+        {x: 114.44201336574214, y: 30.441632858900178, z: 0},
+        {x: 114.43969109587151, y: 30.448768788983695, z: 0},
+        {x: 114.43556575698196, y: 30.447817548746688, z: 0},
+        {x: 114.43444583354447, y: 30.450674855549586, z: 0},
+        {x: 114.43311820652713, y: 30.454394314619194, z: 0}
+    ];
+
+    // 天上的
+    var flys = [
+        {x: 114.43786815503078, y: 30.441396791518397, z: 0},
+        {x: 114.44201336574214, y: 30.441632858900178, z: 100},
+        {x: 114.43969109587151, y: 30.448768788983695, z: 200},
+        {x: 114.43556575698196, y: 30.447817548746688, z: 300},
+        {x: 114.43444583354447, y: 30.450674855549586, z: 100},
+        {x: 114.43311820652713, y: 30.454394314619194, z: 0}
+    ];
+
+    var start = Cesium.JulianDate.fromDate(new Date());
+    start = Cesium.JulianDate.addHours(start, 8, new Cesium.JulianDate());
+    var stop = Cesium.JulianDate.addSeconds(start, TOTAL_TIME / stops.length * (stops.length - 1), new Cesium.JulianDate()); // 设置总时长360秒
+
+    viewer.clock.startTime = start.clone();
+    viewer.clock.stopTime = stop.clone();
+    viewer.clock.currentTime = start.clone();
+    viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
+    viewer.clock.multiplier = 10; // 10倍速率播放
+
+    viewer.timeline.zoomTo(start, stop);
+
+    function computeCircularTrack() {
+
+        var property = new Cesium.SampledPositionProperty();
+
+        for (var i = 0; i < stops.length; i++) {
+            var time = Cesium.JulianDate.addSeconds(start, TOTAL_TIME / stops.length * i, new Cesium.JulianDate());
+            var position = Cesium.Cartesian3.fromDegrees(stops[i].x, stops[i].y, stops[i].z);
+            property.addSample(time, position);
+            viewer.entities.add({
+                position: position,
+                point: {
+                    pixelSize: 8,
+                    color: Cesium.Color.TRANSPARENT,
+                    outlineColor: Cesium.Color.YELLOW,
+                    outlineWidth: 3
+                },
+                label: {
+                    text: '第' + (i + 1) + "个站点",
+                    font: '24pt sans-serif',
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE, //FILL  FILL_AND_OUTLINE OUTLINE
+                    fillColor: Cesium.Color.RED,
+                    outlineColor: Cesium.Color.WHITE,
+                    outlineWidth: 4,
+                    horizontalOrigin: Cesium.HorizontalOrigin.LEFT, // CENTER LEFT RIGHT
+                    verticalOrigin: Cesium.VerticalOrigin.BASELINE, //BASELINE BOTTOM CENTER TOP
+                    pixelOffset: new Cesium.Cartesian2(10, 0) //指定像素偏移量的属性
+                }
+            });
+        }
+        return property;
+    }
+
+    function computeCircularFlight() {
+
+        var property = new Cesium.SampledPositionProperty();
+
+        for (var i = 0; i < flys.length; i++) {
+            var time = Cesium.JulianDate.addSeconds(start, TOTAL_TIME / flys.length * i, new Cesium.JulianDate());
+            var position = Cesium.Cartesian3.fromDegrees(flys[i].x, flys[i].y, flys[i].z);
+            property.addSample(time, position);
+            viewer.entities.add({
+                position: position,
+                point: {
+                    pixelSize: 8,
+                    color: Cesium.Color.TRANSPARENT,
+                    outlineColor: Cesium.Color.YELLOW,
+                    outlineWidth: 3
+                },
+                label: {
+                    text: '第' + (i + 1) + "个飞行站点",
+                    font: '24pt sans-serif',
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE, //FILL  FILL_AND_OUTLINE OUTLINE
+                    fillColor: Cesium.Color.RED,
+                    outlineColor: Cesium.Color.WHITE,
+                    outlineWidth: 4,
+                    horizontalOrigin: Cesium.HorizontalOrigin.LEFT, // CENTER LEFT RIGHT
+                    verticalOrigin: Cesium.VerticalOrigin.BASELINE, //BASELINE BOTTOM CENTER TOP
+                    pixelOffset: new Cesium.Cartesian2(10, 0) //指定像素偏移量的属性
+                }
+            });
+        }
+        return property;
+    }
+
+    var position = computeCircularTrack();
+
+    var position2 = computeCircularFlight();
+
+    var entity = viewer.entities.add({
+
+        availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+            start: start,
+            stop: stop
+        })]),
+        position: position,
+        orientation: new Cesium.VelocityOrientationProperty(position),
+        model: {
+            uri: 'Cesium_Ground.gltf',
+            minimumPixelSize: 64
+        },
+        path: {
+            resolution: 1,
+            material: new Cesium.PolylineGlowMaterialProperty({
+                glowPower: 0.5,
+                color: Cesium.Color.YELLOW
+            }),
+            width: 10
+        }
+    });
+
+    var entity2 = viewer.entities.add({
+
+        availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+            start: start,
+            stop: stop
+        })]),
+        position: position2,
+        orientation: new Cesium.VelocityOrientationProperty(position2),
+        model: {
+            uri: 'Cesium_Air.gltf',
+            minimumPixelSize: 64
+        },
+        path: {
+            resolution: 1,
+            material: new Cesium.PolylineGlowMaterialProperty({
+                glowPower: 0.5,
+                color: Cesium.Color.RED
+            }),
+            width: 10
+        }
+    });
+
+    // viewer.trackedEntity = entity;
+
+    entity.position.setInterpolationOptions({
+
+        // 直线
+        interpolationDegree: 1,
+        interpolationAlgorithm: Cesium.LinearApproximation
+
+        // 拉格朗日插值
+        // interpolationDegree : 5,
+        // interpolationAlgorithm : Cesium.LagrangePolynomialApproximation
+
+        //埃尔米特插值
+        // interpolationDegree : 2,
+        // interpolationAlgorithm : Cesium.HermitePolynomialApproximation
+    });
+
+    entity2.position.setInterpolationOptions({
+
+        //埃尔米特插值
+        interpolationDegree : 2,
+        interpolationAlgorithm : Cesium.HermitePolynomialApproximation
+    });
+
+
+    /**
+     * 获取当前视角
+     */
+    function getCamera() {
+        var heading = scene.camera.heading;
+        var pitch = scene.camera.pitch;
+        var roll = scene.camera.roll;
+        var position = scene.camera.position;
+        var ellipsoid = scene.globe.ellipsoid;
+        var cartographic = ellipsoid.cartesianToCartographic(position);
+        var lat = Cesium.Math.toDegrees(cartographic.latitude);
+        var lon = Cesium.Math.toDegrees(cartographic.longitude);
+        var height = cartographic.height;
+        console.log(heading);
+        console.log(pitch);
+        console.log(roll);
+        console.log(lon);
+        console.log(lat);
+        console.log(height);
+    }
+
+    //得到当前三维场景
+    var scene = viewer.scene;
+
+    //得到当前三维场景的椭球体
+    var ellipsoid = scene.globe.ellipsoid;
+
+    // 注册屏幕空间事件
+    viewer.screenSpaceEventHandler.setInputAction(function (event) {
+
+        //通过指定的椭球或者地图对应的坐标系，将鼠标的二维坐标转换为对应椭球体三维坐标
+        var cartesian = viewer.camera.pickEllipsoid(event.position, ellipsoid);
+        if (cartesian) {
+            //将笛卡尔坐标转换为地理坐标
+            var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+            //将弧度转为度的十进制度表示
+            var longitudeString = Cesium.Math.toDegrees(cartographic.longitude);
+            var latitudeString = Cesium.Math.toDegrees(cartographic.latitude);
+            console.info("经度：" + longitudeString + ', 纬度：' + latitudeString + ", 高度：");
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK); // 点击获取坐标
+
+</script>
+</body>
+</html>

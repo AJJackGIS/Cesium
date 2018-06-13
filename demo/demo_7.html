@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>烟花粒子效果</title>
+    <script type="text/javascript" src="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
+          type="text/css"/>
+    <style>
+        html, body, #map3d {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+<div id="map3d"></div>
+<script>
+    var viewer = new Cesium.Viewer('map3d', {
+        baseLayerPicker: false,
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        })
+    });
+
+    var scene = viewer.scene;
+    scene.debugShowFramesPerSecond = true;
+
+    var particleCanvas;
+
+    // 绘制一个半径为8的圆填充色为白色
+    function getImage() {
+        if (!Cesium.defined(particleCanvas)) {
+            particleCanvas = document.createElement('canvas');
+            particleCanvas.width = 16;
+            particleCanvas.height = 16;
+            var context2D = particleCanvas.getContext('2d');
+            context2D.beginPath();
+            context2D.arc(8, 8, 8, 0, Cesium.Math.TWO_PI, true);
+            context2D.closePath();
+            context2D.fillStyle = 'rgb(255, 255, 255)';
+            context2D.fill();
+        }
+        return particleCanvas;
+    }
+
+    var xMin = -100.0;
+    var xMax = 100.0;
+    var yMin = -80.0;
+    var yMax = 100.0;
+    var zMin = -50.0;
+    var zMax = 50.0;
+
+    // 随机偏移目标点
+    var offsets = [
+        new Cesium.Cartesian3(Cesium.Math.randomBetween(xMin, xMax), Cesium.Math.randomBetween(yMin, yMax), Cesium.Math.randomBetween(zMin, zMax)),
+        new Cesium.Cartesian3(Cesium.Math.randomBetween(xMin, xMax), Cesium.Math.randomBetween(yMin, yMax), Cesium.Math.randomBetween(zMin, zMax)),
+        new Cesium.Cartesian3(Cesium.Math.randomBetween(xMin, xMax), Cesium.Math.randomBetween(yMin, yMax), Cesium.Math.randomBetween(zMin, zMax)),
+        new Cesium.Cartesian3(Cesium.Math.randomBetween(xMin, xMax), Cesium.Math.randomBetween(yMin, yMax), Cesium.Math.randomBetween(zMin, zMax))
+    ];
+
+    var colorOptions = [
+        {red: 0.75, green: 0.0, blue: 0.8, alpha: 1.0},
+        {red: 0.0, green: 0.75, blue: 0.8, alpha: 1.0},
+        {red: 0.0, green: 0.0, blue: 0.8, alpha: 1.0},
+        {red: 0.75, green: 0.75, blue: 0.0, alpha: 1.0}
+    ];
+
+    // 模型位置
+    var modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.fromDegrees(114.0, 30.0));
+
+    for (var i = 0; i < offsets.length; i++) {
+        // 颜色
+        var color = Cesium.Color.fromRandom(colorOptions[i]);
+        // 根据偏移量计算粒子位置
+        var position = Cesium.Cartesian3.add(new Cesium.Cartesian3(0.0, 0.0, 100.0), offsets[i], new Cesium.Cartesian3());
+        var emitterModelMatrix = Cesium.Matrix4.fromTranslation(position, new Cesium.Matrix4());
+        scene.primitives.add(new Cesium.ParticleSystem({
+            image: getImage(),
+            startColor: color.withAlpha(0.7),
+            endColor: color.withAlpha(0.0),
+            life: 1,
+            speed: 100.0,
+            width: 6,
+            height: 6,
+            rate: 0,
+            emitter: new Cesium.SphereEmitter(0.5),
+            bursts: [
+                new Cesium.ParticleBurst({time: Cesium.Math.nextRandomNumber() * 7, minimum: 400, maximum: 500}),
+                new Cesium.ParticleBurst({time: Cesium.Math.nextRandomNumber() * 7, minimum: 300, maximum: 400}),
+                new Cesium.ParticleBurst({time: Cesium.Math.nextRandomNumber() * 7, minimum: 200, maximum: 300})
+            ],
+            lifeTime: 7,
+            modelMatrix: modelMatrix,
+            emitterModelMatrix: emitterModelMatrix
+        }));
+    }
+
+
+    var camera = viewer.scene.camera;
+    var cameraOffset = new Cesium.Cartesian3(-600.0, 0.0, 0.0);
+    camera.lookAtTransform(modelMatrix, cameraOffset); // 找一个偏远的地方看
+
+</script>
+</body>
+</html>
