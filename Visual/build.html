@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>三维地球</title>
+    <script type="text/javascript" src="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
+          type="text/css"/>
+    <style>
+        html, body, #map3d {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+<div id="map3d"></div>
+<script>
+    var viewer = new Cesium.Viewer('map3d', {
+        animation: true,
+        baseLayerPicker: false,
+        homeButton: false,
+        timeline: true,
+        navigationHelpButton: false,
+        sceneModePicker: false,
+        geocoder: false,
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'
+        })
+        // imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
+        //     url: "http://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer"
+        // })
+    });
+
+    viewer.scene.globe.depthTestAgainstTerrain = true;
+
+    var initialPosition = Cesium.Cartesian3.fromDegrees(114.43070254998972, 30.43085428114166, 2423.785344624202);
+    var initialOrientation = new Cesium.HeadingPitchRoll(6.283185307179583, -0.7853986374096347, 6.283185307179586);
+    viewer.scene.camera.setView({
+        destination: initialPosition,
+        orientation: initialOrientation,
+        endTransform: Cesium.Matrix4.IDENTITY
+    });
+
+    var tileSet = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
+        url: 'http://10.129.56.56:8080/model/build2/tileset.json'
+    }));
+
+    tileSet.style = new Cesium.Cesium3DTileStyle({
+        color: {
+            conditions: [
+                ["true", "rgba(255,255,255, 0.5)"]
+            ]
+        },
+        show: '${height} > 0',
+        meta: {
+            description: '"Building id ${fid} has height ${height}."'
+        }
+    });
+
+    // var redCone = viewer.entities.add({
+    //     name: 'Red cone',
+    //     position: Cesium.Cartesian3.fromDegrees(114.438304, 30.445981, 100.0),
+    //     cylinder: {
+    //         length: 200.0,
+    //         topRadius: 0.0,
+    //         bottomRadius: 200.0,
+    //         material: Cesium.Color.RED.withAlpha(0.4)
+    //     }
+    // });
+
+    var scene = viewer.scene;
+    var camera = viewer.camera;
+    var ellipsoid = scene.globe.ellipsoid;
+
+    viewer.screenSpaceEventHandler.setInputAction(function (movement) {
+        var cartesian = camera.pickEllipsoid(movement.position, ellipsoid);
+        var cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+        var longitude = Cesium.Math.toDegrees(cartographic.longitude).toFixed(6);
+        var latitude = Cesium.Math.toDegrees(cartographic.latitude).toFixed(6);
+        console.log(longitude + "," + latitude);
+
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    var start = Cesium.JulianDate.fromDate(new Date(2018, 6, 5, 8));
+    var stop = Cesium.JulianDate.addSeconds(start, 360, new Cesium.JulianDate()); // 设置总时长360秒
+
+    viewer.clock.startTime = start.clone();
+    viewer.clock.stopTime = stop.clone();
+    viewer.clock.currentTime = start.clone();
+    viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
+    viewer.clock.multiplier = 10; // 10倍速率播放
+
+    viewer.timeline.zoomTo(start, stop);
+
+    function computeCirclularFlight(lon, lat, radius, height) {
+        var property = new Cesium.SampledPositionProperty();
+        for (var i = 0; i <= 360; i += 45) {
+
+            // 根据360弧度，每45°一个拐点，随机生成8个点
+            var radians = Cesium.Math.toRadians(i);
+            var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate()); // 在总时长360秒中，设置中间点
+
+            // 生成随机的坐标
+            var position = Cesium.Cartesian3.fromDegrees(lon + (radius * 1.5 * Math.cos(radians)), lat + (radius * Math.sin(radians)), height);
+
+            // 添加每一个链接点的信息，到达的时间以及坐标位置
+            property.addSample(time, position);
+
+            // 链接点
+            // viewer.entities.add({
+            //     position: position,
+            //     point: {
+            //         pixelSize: 8,
+            //         color: Cesium.Color.TRANSPARENT,
+            //         outlineColor: Cesium.Color.YELLOW,
+            //         outlineWidth: 3
+            //     }
+            // });
+        }
+        return property;
+    }
+
+    var position = computeCirclularFlight(114.438304, 30.445981, 0.01, 200);
+    var position_2 = computeCirclularFlight(114.438304, 30.445981, 0.01, 100);
+
+    var entity = viewer.entities.add({
+
+        availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+            start: start,
+            stop: stop
+        })]),
+
+        position: position, // 点集
+
+        orientation: new Cesium.VelocityOrientationProperty(position),
+
+        model: {
+            uri: 'Cesium_Air.gltf',
+            minimumPixelSize: 32
+        },
+
+        // Show the path as a pink line sampled in 1 second increments.
+        path: {
+            resolution: 1,
+            material: new Cesium.PolylineGlowMaterialProperty({
+                glowPower: 0.1,
+                color: Cesium.Color.YELLOW
+            }),
+            width: 10
+        }
+    });
+
+    var entity2 = viewer.entities.add({
+
+        availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+            start: start,
+            stop: stop
+        })]),
+
+        position: position_2, // 点集
+
+        orientation: new Cesium.VelocityOrientationProperty(position_2),
+
+        cylinder: {
+            length: 199.0,
+            topRadius: 0.0,
+            bottomRadius: 200.0,
+            material: Cesium.Color.RED.withAlpha(0.4),
+            outline: true,
+            numberOfVerticalLines: 0,
+            outlineColor: Cesium.Color.RED.withAlpha(0.8)
+        }
+    });
+
+    // viewer.trackedEntity = entity;
+
+    entity.position.setInterpolationOptions({
+        interpolationDegree: 5,
+        interpolationAlgorithm: Cesium.LagrangePolynomialApproximation
+    });
+
+    entity2.position.setInterpolationOptions({
+        interpolationDegree: 5,
+        interpolationAlgorithm: Cesium.LagrangePolynomialApproximation
+    });
+
+    setTimeout(function () {
+        viewer.animation.viewModel.pauseViewModel.command();
+    }, 5000);
+    setTimeout(function () {
+        viewer.animation.viewModel.pauseViewModel.command();
+    }, 8000);
+
+
+    var pos = [
+        {x: 114.435641, y: 30.447786, z: 0},
+        {x: 114.439688, y: 30.448658, z: 0},
+        {x: 114.440954, y: 30.444593, z: 0},
+        {x: 114.436960, y: 30.444269, z: 0}
+    ];
+
+    var p = new Cesium.SampledPositionProperty();
+    for (var i = 0; i <= 3; i += 1) {
+        var time = Cesium.JulianDate.addSeconds(start, i * 120, new Cesium.JulianDate()); // 在总时长360秒中，设置中间点
+        var position = Cesium.Cartesian3.fromDegrees(pos[i].x , pos[i].y, pos[i].z);
+        p.addSample(time, position);
+    }
+
+    var entity_3 = viewer.entities.add({
+
+        availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+            start: start,
+            stop: stop
+        })]),
+
+        position: p, // 点集
+
+        orientation: new Cesium.VelocityOrientationProperty(p),
+
+        model: {
+            uri: 'Cesium_Man.gltf',
+            minimumPixelSize: 32
+        },
+
+        // Show the path as a pink line sampled in 1 second increments.
+        path: {
+            resolution: 1,
+            material: new Cesium.PolylineGlowMaterialProperty({
+                glowPower: 0.1,
+                color: Cesium.Color.YELLOW
+            }),
+            width: 10
+        }
+    });
+
+
+</script>
+</body>
+</html>
