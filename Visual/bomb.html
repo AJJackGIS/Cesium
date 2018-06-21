@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>飞机投弹爆炸效果</title>
+    <script type="text/javascript" src="http://172.29.1.151:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="http://172.29.1.151:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
+          type="text/css"/>
+    <style>
+        html, body, #map3d {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+<div id="map3d"></div>
+<script>
+    var viewer = new Cesium.Viewer('map3d', {
+        fullscreenButton: false,
+        baseLayerPicker: false,
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        })
+    });
+
+    viewer._animation.container.style.display = "none";
+    viewer._timeline.container.style.display = "none";
+    viewer._cesiumWidget._creditContainer.style.display = "none";
+
+    var scene = viewer.scene;
+    var camera = viewer.scene.camera;
+
+    camera.setView({
+        destination: Cesium.Cartesian3.fromDegrees(114.02593283901632, 29.965348165574188, 1234.3273663345212),
+        orientation: {
+            heading: 6.030680772502972, // 朝向 左右旋转
+            pitch: -0.164562331999887, // 仰角 上下旋转
+            roll: 6.283185284103052 // 翻转 左右摇晃
+        }
+    });
+
+    /**
+     * 添加一个爆炸效果
+     * @param position
+     */
+    function addBomb(position) {
+
+        // 爆炸模型位置
+        var modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(position);
+        var offset = Cesium.Cartesian3.add(new Cesium.Cartesian3(0.0, 0.0, 0.0), Cesium.Cartesian3.ZERO, new Cesium.Cartesian3());
+        var emitterModelMatrix = Cesium.Matrix4.fromTranslation(offset, new Cesium.Matrix4());
+        scene.primitives.add(new Cesium.ParticleSystem({
+            image: 'fire.png',
+            startColor: Cesium.Color.RED.withAlpha(0.7),
+            endColor: Cesium.Color.YELLOW.withAlpha(0.3),
+            startScale: 1,
+            endScale: 4,
+            life: 1,
+            speed: 5,
+            width: 20,
+            height: 20,
+            rate: 400,
+            lifeTime: 1,
+            loop: false,
+            emitter: new Cesium.SphereEmitter(200),
+            modelMatrix: modelMatrix,
+            emitterModelMatrix: emitterModelMatrix
+        }));
+    }
+
+    // 设置时间
+    var start = Cesium.JulianDate.fromDate(new Date(2018, 6, 5, 8));
+    var stop = Cesium.JulianDate.addSeconds(start, 12, new Cesium.JulianDate()); // 设置总时长120秒
+
+    viewer.clock.startTime = start.clone();
+    viewer.clock.stopTime = stop.clone();
+    viewer.clock.currentTime = start.clone();
+    viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
+    viewer.clock.multiplier = 1; // 10倍速率播放
+
+    viewer.timeline.zoomTo(start, stop);
+
+    function computeAirPlaneTrack() {
+        var property = new Cesium.SampledPositionProperty();
+        // 飞机路线
+        property.addSample(Cesium.JulianDate.addSeconds(start, 0, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.0, 30.0, 1000));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 5, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.01, 30.0, 1000));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 10, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.02, 30.0, 1000));
+        return property;
+    }
+
+    function computeBombTrack() {
+        var property = new Cesium.SampledPositionProperty();
+        // 炸弹路线
+        property.addSample(Cesium.JulianDate.addSeconds(start, 5, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.01, 30.0, 1000));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 7.5, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.015, 30.0, 750));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 10, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.02, 30.0, 0));
+        return property;
+    }
+
+    var airPosition = computeAirPlaneTrack();
+    var bombPosition = computeBombTrack();
+
+    var airEntity = viewer.entities.add({
+        availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+            start: start,
+            stop: stop
+        })]),
+        position: airPosition,
+        orientation: new Cesium.VelocityOrientationProperty(airPosition),
+        model: {
+            uri: 'Cesium_Air.gltf',
+            minimumPixelSize: 64
+        }
+    });
+
+    var bombEntity = viewer.entities.add({
+        availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+            start: start,
+            stop: stop
+        })]),
+        position: bombPosition,
+        orientation: new Cesium.VelocityOrientationProperty(bombPosition),
+        model: {
+            uri: 'CesiumBalloon.glb',
+            minimumPixelSize: 24
+        }
+    });
+
+    airEntity.position.setInterpolationOptions({
+        interpolationDegree: 1,
+        interpolationAlgorithm: Cesium.LinearApproximation
+    });
+
+    bombEntity.position.setInterpolationOptions({
+        interpolationDegree: 5,
+        interpolationAlgorithm: Cesium.LagrangePolynomialApproximation
+    });
+
+    var flag = true;
+    scene.preRender.addEventListener(function (scene, time) {
+        if (flag && Cesium.JulianDate.greaterThanOrEquals(viewer.timeline._clock.currentTime, Cesium.JulianDate.addSeconds(start, 10, new Cesium.JulianDate()))) {
+            var position = Cesium.Cartesian3.fromDegrees(114.02, 30.0, 1);
+            addBomb(position);
+            flag = false;
+        }
+        if (Cesium.JulianDate.lessThan(viewer.timeline._clock.currentTime, Cesium.JulianDate.addSeconds(start, 10, new Cesium.JulianDate()))) {
+            flag = true;
+        }
+    });
+
+</script>
+</body>
+</html>
