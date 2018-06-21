@@ -200,3 +200,369 @@ meta是用来定义非可视化属性的，这个使用的情况少。例如：
 环境要素的模拟主要是通过viewer.scene对象的skyAtmosphere属性,分为hueShift(色调)、saturationShift(饱和度)、brightnessShift(亮度)，参数值的范围为-1到1，默认为0.
 
 同时，还可以模拟阳光的照射情况以及雾的效果，阳光主要是viewer.globle.enableLighting属性，雾是viewer.scene.fog.enabled属性，设置true或false即可。默认是不加载阳光效果，加载雾的效果。
+
+> demo_1.html 各种entity的添加
+
+盒子(box) 圈和椭圆(ellipse) 走廊(corridor) 气缸和锥体(cylinder) 多边形(polygon)
+挖洞的多边形(polygon-holes) 折线(polyline) 折线卷(polylineVolume) 矩形(rectangle)
+球体和椭球体(ellipsoid) 墙壁(wall) 点(points)  广告牌(Billboards)
+
+> demo_2.html ImageryProvider
+
+    // Google
+    imageryProvider: new Cesium.UrlTemplateImageryProvider({
+        url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+    })
+    // ArcGIS
+    imageryProvider : new Cesium.ArcGisMapServerImageryProvider({
+        // url : 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+        url : 'http://server.arcgisonline.com/ArcGIS/rest/services/ESRI_Imagery_World_2D/MapServer'
+    }),
+    // BingMaps
+    imageryProvider: new Cesium.BingMapsImageryProvider({
+        url: 'https://dev.virtualearth.net',
+        key: 'Ao42l-0u7fJXMmQSGY0_5zW6kfuHPeTtanya4rs8bItYH982UV42_xNccLDq70lY',
+        mapStyle: Cesium.BingMapsStyle.AERIAL
+    })
+    // OSM
+    imageryProvider: Cesium.createOpenStreetMapImageryProvider({
+        url : 'https://a.tile.openstreetmap.org/'
+    })
+    // 天地图影像
+    imageryProvider: new Cesium.WebMapTileServiceImageryProvider({
+        url: "http://t0.tianditu.com/img_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=img&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default&format=tiles",
+        layer: "tdtBasicLayer",
+        style: "default",
+        format: "image/jpeg",
+        tileMatrixSetID: "GoogleMapsCompatible",
+        show: false
+    })
+    // 天地图注记
+    imageryProvider: new Cesium.WebMapTileServiceImageryProvider({
+        url: "http://t0.tianditu.com/cia_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=cia&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default.jpg",
+        layer: "tdtAnnoLayer",
+        style: "default",
+        format: "image/jpeg",
+        tileMatrixSetID: "GoogleMapsCompatible",
+        show: false
+    })
+
+如有影像叠加的情况，可以设置透明度，显示多个
+
+    //50%透明度
+    blackMarble.alpha  = 0.8;
+    //两倍亮度
+    blackMarble.brightness = 2.0;
+
+单张图片，适合雷达卫星图，视频贴图
+    
+    viewer.imageryLayers.addImageryProvider(new Cesium.SingleTileImageryProvider({
+        url : 'Cesium_Logo_Color_Overlay.png',
+        rectangle : Cesium.Rectangle.fromDegrees(-75.0, 28.0, -67.0, 29.75)
+    }));
+
+地形：
+    
+    var terrainProvider = new Cesium.CesiumTerrainProvider({
+        url : 'https://assets02.agi.com/stk-terrain/v1/tilesets/world/tiles',
+        //请求水波纹效果
+        requestWaterMask: true,
+        //请求照明
+        requestVertexNormals: true
+    });
+    viewer.terrainProvider = terrainProvider;
+    
+> demo_3.html 实体模型的两种加载方式
+
+entity的方式
+
+    //通过entity的方式加载3d模型
+    var entity = viewer.entities.add({
+        position : Cesium.Cartesian3.fromDegrees(-123.0744619, 44.0503706),
+        model : {
+            uri : 'Cesium_Ground.gltf',
+            //模型颜色，透明度
+            color : Cesium.Color.fromAlpha(Cesium.Color.RED, parseFloat(0.5)),
+            //轮廓线
+            silhouetteColor : Cesium.Color.fromAlpha(Cesium.Color.GREEN, parseFloat(0.5)),
+            //模型样式 ['Highlight', 'Replace', 'Mix']
+            colorBlendMode : Cesium.ColorBlendMode.MIX,
+            //colorBlendAmount需要选择mix后将colorBlendAmountEnabled设置为true才能使用
+            colorBlendAmountEnabled : true,
+            colorBlendAmount : parseFloat(0.8)
+        }
+    });
+    
+通过primitives的方式加载
+    
+    var origin = Cesium.Cartesian3.fromDegrees(-123.0744619, 44.0503706, 0);
+    var modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
+    var model = viewer.scene.primitives.add(Cesium.Model.fromGltf({
+        url: 'Cesium_Ground.gltf',
+        modelMatrix: modelMatrix,
+        minimumPixelsSize: 512,
+        maximumScale: 200000
+    }));
+    // 当模型准备渲染时，以半速度播放所有动画
+    Cesium.when(model.readyPromise).then(function (model) {
+        model.activeAnimations.addAll({
+            //这个半速是相对于Cesium的clock来说的
+            speedup: 0.5,
+            //永久重复
+            loop: Cesium.ModelAnimationLoop.REPEAT,
+            // reverse : true // Play in reverse
+        });
+    }).otherwise(function (error) {
+        window.alert(error);
+    });
+    
+> demo_4.html entity和primitives的比较
+
+    // 用entity创建多个geometry
+    var entity = viewer.entities.add({
+        rectangle: {
+            coordinates: Cesium.Rectangle.fromDegrees(-100.0, 20.0, -90.0, 30.0),
+            material: new Cesium.StripeMaterialProperty({
+                evenColor: Cesium.Color.WHITE,
+                oddColor: Cesium.Color.BLUE,
+                repeat: 5 // 重复5条
+            })
+        }
+    });
+    for (var lon = -180.0; lon < 180.0; lon += 5.0) {
+        for (var lat = -85.0; lat < 85.0; lat += 5.0) {
+            viewer.entities.add({
+                rectangle: new Cesium.RectangleGraphics({
+                    coordinates: Cesium.Rectangle.fromDegrees(lon, lat, lon + 5.0, lat + 5.0),
+                    material: new Cesium.ColorMaterialProperty(Cesium.Color.fromRandom({alpha: 0.5})),
+                    outline: true,
+                    outlineColor: Cesium.Color.WHITE,
+                    outlineWidth: 1.5
+                })
+    
+            })
+        }
+    }
+    
+    // 用primitives创建多个geomerty
+    var instances = [];
+    //循环创建随机颜色的矩形
+    for (var lon = -180.0; lon < 180.0; lon += 5.0) {
+        for (var lat = -85.0; lat < 85.0; lat += 5.0) {
+            instances.push(new Cesium.GeometryInstance({
+                id: Cesium.Math.nextRandomNumber(),
+                geometry: new Cesium.RectangleGeometry({
+                    rectangle: Cesium.Rectangle.fromDegrees(lon, lat, lon + 5.0, lat + 5.0),
+                    vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT
+                }),
+                attributes: {
+                    color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.fromRandom({alpha: 0.5}))
+                }
+            }));
+        }
+    }
+
+    scene.primitives.add(new Cesium.Primitive({
+        geometryInstances: instances,
+        appearance: new Cesium.PerInstanceColorAppearance() //使用PerInstanceColorAppearance不同颜色来遮蔽每个实例
+    }));
+   
+这样的写法自然是有优点也有缺点的(摘抄)
+
+* 优点：
+
+性能 - 当绘制大量静态图元时，直接使用几何形状可以将它们组合成单个几何体，以减少CPU开销并更好地利用GPU。并且组合是在网络上完成的，可以保持UI的响应。
+灵活性 - 基元组合几何和外观。通过解耦，我们可以独立地修改。我们可以添加与许多不同外观兼容的新几何体，反之亦然。
+低级访问 - 外观提供了接近于渲染器的访问，可以直接使用渲染器的所有细节(Appearances provide close-to-the-metal access to rendering without having to worry about all the details of using the Renderer directly)。外观使其易于：
+编写完整的GLSL顶点和片段着色器。
+使用自定义渲染状态。
+
+* 缺点：
+
+代码量增大，并且需要使用者对这方面有更深入的理解。
+组合几何可以使用静态数据，不一定是动态数据。
+primitives 的抽象级别适合于映射应用程序;几何图形和外观的抽象层次接近传统的3D引擎(Primitives are at the level of abstraction appropriate for mapping apps; geometries and appearances have a level of abstraction closer to a traditional 3D engine)（感觉翻译的不太好的地方都给上了原文）
+
+> demo_5.html 粒子系统
+
+粒子系统的起步从官网的Interpolation例子开始
+
+* 设置animation和timeline
+* 设置timeline的时间范围，循环方式，频率
+* 计算时间段内每个时间，模型所在的位置
+* 添加模型
+* 设置曲线插值方式
+
+根据这几部就能让模型动起来，接下来撸 Particle System 真正的粒子例子
+
+    // 粒子系统
+    var particleSystem = viewer.scene.primitives.add(new Cesium.ParticleSystem({
+        image: 'fire.png', // 粒子资源，用于广告牌的URI，HTMLImageElement或HTMLCanvasElement。
+        startColor: Cesium.Color.RED.withAlpha(0.7), //粒子出生时的颜色
+        endColor: Cesium.Color.YELLOW.withAlpha(0.3), //当粒子死亡时的颜色
+        startScale: 1, //粒子出生时的比例，相对于原始大小
+        endScale: 4, //粒子在死亡时的比例
+        life: 1, //以秒为单位设置粒子的最小和最大寿命
+        // minimumLife: 1, //以秒为单位设置粒子的最短寿命
+        // maximumLife: 1, //以秒为单位设置粒子的最大寿命
+        speed: 5,//设置以米/秒为单位的最小和最大速度
+        // minimumSpeed: 5, //设置以米/秒为单位的最小速度
+        // maximumSpeed: 5, //设置以米/秒为单位的最大速度
+        width: 20,  // 设置以像素为单位的粒子的最小和最大宽度
+        // minimumWidth: viewModel.particleSize, //设置粒子的最小宽度（以像素为单位）。
+        // maximumWidth: viewModel.particleSize, //设置粒子的最大宽度（以像素为单位）。
+        height: 20, //设置粒子的最小和最大高度（以像素为单位）。
+        // minimumHeight: viewModel.particleSize, //设置粒子的最小高度（以像素为单位）。
+        // maximumHeight: viewModel.particleSize, //设置粒子的最大高度（以像素为单位）。
+        rate: 10, //每秒发射的粒子数量
+        // bursts: [
+        //     // time：在粒子系统生命周期开始之后的几秒钟内将发生突发事件。
+        //     // minimum：突发中发射的最小粒子数量
+        //     // maximum：突发中发射的最大粒子数量
+        //     // new Cesium.ParticleBurst({time: 5.0, minimum: 1, maximum: 10}),   // 当在5秒时，发射的数量为50-100
+        //     // new Cesium.ParticleBurst({time: 10.0, minimum: 1, maximum: 10}), // 当在10秒时，发射的数量为200-300
+        //     // new Cesium.ParticleBurst({time: 15.0, minimum: 1, maximum: 10})  // 当在15秒时，发射的数量为500-800
+        //     new Cesium.ParticleBurst({time: 5.0, minimum: 50, maximum: 100}),   // 当在5秒时，发射的数量为50-100
+        //     new Cesium.ParticleBurst({time: 10.0, minimum: 100, maximum: 200}), // 当在10秒时，发射的数量为200-300
+        //     new Cesium.ParticleBurst({time: 15.0, minimum: 200, maximum: 300})  // 当在15秒时，发射的数量为500-800
+        // ], //数组ParticleBurst，周期性地发射粒子脉冲串
+        lifeTime: 16, //多长时间的粒子系统将以秒为单位发射粒子
+        loop: true, //是否粒子系统应该在完成时循环它的爆发
+        // new Cesium.CircleEmitter(0.5)
+        // new Cesium.BoxEmitter(new Cesium.Cartesian3(0.1, 0.1, 0.1))
+        // new Cesium.ConeEmitter(Cesium.Math.toRadians(30.0))
+        emitter: new Cesium.CircleEmitter(0.5), //此系统的粒子发射器  共有 BoxEmitter,CircleEmitter,ConeEmitter,SphereEmitter 几类
+        emitterModelMatrix: computeEmitterModelMatrix(), // 4x4转换矩阵，用于在粒子系统本地坐标系中转换粒子系统发射器
+        modelMatrix: computeModelMatrix(entity, Cesium.JulianDate.now()), // 4x4转换矩阵，可将粒子系统从模型转换为世界坐标
+        forces: [applyGravity] // 强制回调函数--例子：这是添加重力效果
+    }));
+    
+    // 计算模型位置
+    function computeModelMatrix(entity, time) {
+        var position = Cesium.Property.getValueOrUndefined(entity.position, time, new Cesium.Cartesian3());
+        if (!Cesium.defined(position)) {
+            return undefined;
+        }
+        var orientation = Cesium.Property.getValueOrUndefined(entity.orientation, time, new Cesium.Quaternion());
+        var modelMatrix = null;
+        if (!Cesium.defined(orientation)) {
+            modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(position, undefined, new Cesium.Matrix4());
+        } else {
+            modelMatrix = Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromQuaternion(orientation, new Cesium.Matrix3()), position, modelMatrix);
+        }
+        return modelMatrix;
+    }
+    
+    // 计算粒子发射系统的模型位置
+    function computeEmitterModelMatrix() {
+        var hpr = Cesium.HeadingPitchRoll.fromDegrees(0, 0, 0, new Cesium.HeadingPitchRoll());
+        var trs = new Cesium.TranslationRotationScale();
+        trs.translation = Cesium.Cartesian3.fromElements(2.5, 4.0, 1.0, new Cesium.Cartesian3()); // 设置粒子系统相对于模型坐标的偏移
+        trs.rotation = Cesium.Quaternion.fromHeadingPitchRoll(hpr, new Cesium.Quaternion());
+        return Cesium.Matrix4.fromTranslationRotationScale(trs, new Cesium.Matrix4());
+    }
+    
+    /**
+     * 用于在每个时间步上对粒子施加力的函数
+     * @param particle 要施加力的粒子
+     * @param dt 自上次更新以来的时间
+     */
+    function applyGravity(particle, dt) {
+        var position = particle.position;
+        var gravityVector = Cesium.Cartesian3.normalize(position, new Cesium.Cartesian3());
+        Cesium.Cartesian3.multiplyByScalar(gravityVector, 0 * dt, gravityVector); // 设置重力效果大小 -20时效果比较明显
+        particle.velocity = Cesium.Cartesian3.add(particle.velocity, gravityVector, particle.velocity);
+    }
+    
+    // 当场景运动起来时，粒子系统要实时计算位置，静止的场景可以省略这个
+    viewer.scene.preRender.addEventListener(function (scene, time) {
+        particleSystem.modelMatrix = computeModelMatrix(entity, time);
+        particleSystem.emitterModelMatrix = computeEmitterModelMatrix();
+    });
+    
+> demo_6.html 制作雨天效果
+
+为了加深对例子系统的理解，做了一个雨天效果
+
+1、随机在设定好的下雨的范围生成n个雨点
+
+     // 随机的entity
+    var entities = [];
+    for (var lon = 114.0; lon < 114.1; lon += 0.01) {
+        for (var lat = 30.0; lat < 30.1; lat += 0.01) {
+            entities.push(viewer.entities.add({
+                position: Cesium.Cartesian3.fromDegrees((lon + lon + 0.01) / 2, (lat + lat + 0.01) / 2, 10000),
+                point: {
+                    pixelSize: 5,
+                    color: Cesium.Color.RED,
+                    outlineColor: Cesium.Color.WHITE,
+                    outlineWidth: 2,
+                    show: false
+                }
+            }));
+        }
+    }
+    
+2、每个雨点加载一个粒子系统
+
+    for (var i = 0; i < entities.length; i++) {
+        viewer.scene.primitives.add(new Cesium.ParticleSystem({
+            image: 'rainy.png', // 雨点图片
+            startColor: Cesium.Color.GHOSTWHITE,
+            endColor: Cesium.Color.GHOSTWHITE,
+            startScale: 1,
+            endScale: 1,
+            life: 20,
+            speed: Math.floor(Math.random() * 20 + 1),//随机速度
+            width: 10,  // 设置以像素为单位的粒子的最小和最大宽度
+            height: 10, //设置粒子的最小和最大高度（以像素为单位）。
+            rate: 1, //每秒发射的粒子数量
+            lifeTime: 16, //多长时间的粒子系统将以秒为单位发射粒子
+            loop: true, //是否粒子系统应该在完成时循环它的爆发
+            emitter: new Cesium.CircleEmitter(0.5), 
+            emitterModelMatrix: computeEmitterModelMatrix(), 
+            modelMatrix: computeModelMatrix(entities[i], Cesium.JulianDate.now()), 
+            forces: [applyGravity]
+        }))
+    }
+    
+> demo_6_1.html 雨天粒子效果2
+
+demo_6中通过添加entity的方式，给每个entity添加一个粒子系统，在6_1中,只添加了一个entity,
+然后每个粒子通过位置偏移来定位，减少entity的消耗
+
+1、制定模型位置
+
+    var modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.fromDegrees(114.0, 30.0));
+
+2、定义偏移范围
+
+    var minX = -1000.0;
+    var maxX = 1000.0;
+    var minY = -800.0;
+    var maxY = 1000.0;
+    var minZ = -500.0;
+    var maxZ = 500.0;
+    
+3、计算偏移
+
+    var x = Cesium.Math.randomBetween(minX, maxX);
+    var y = Cesium.Math.randomBetween(minY, maxY);
+    var z = Cesium.Math.randomBetween(minZ, maxZ);
+    var height = Cesium.Math.randomBetween(800, 1000);
+    var offset = new Cesium.Cartesian3(x, y, z);
+    
+4、计算粒子系统位置
+
+    var position = Cesium.Cartesian3.add(new Cesium.Cartesian3(0.0, 0.0, height), offset, new Cesium.Cartesian3());
+    var emitterMatrix = Cesium.Matrix4.fromTranslation(position, new Cesium.Matrix4());
+    
+> demo_7.html 官网烟花粒子系统
+
+> demo_8.html entity叠加视频
+
+这个例子可以模拟广场大屏放电影的效果，视频叠加到模型上。
+
+> build.html 模拟无人机在巡航时，能够照射的范围
+
+两个entity的叠加
