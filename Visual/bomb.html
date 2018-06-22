@@ -36,11 +36,11 @@
     var camera = viewer.scene.camera;
 
     camera.setView({
-        destination: Cesium.Cartesian3.fromDegrees(114.02593283901632, 29.965348165574188, 1234.3273663345212),
+        destination: Cesium.Cartesian3.fromDegrees(114.064849065915, 29.994878553057447, 15.007291154869968),
         orientation: {
-            heading: 6.030680772502972, // 朝向 左右旋转
-            pitch: -0.164562331999887, // 仰角 上下旋转
-            roll: 6.283185284103052 // 翻转 左右摇晃
+            heading: 5.040532816257989, // 朝向 左右旋转
+            pitch: 0.15284408485189505, // 仰角 上下旋转
+            roll: 6.28040490073921 // 翻转 左右摇晃
         }
     });
 
@@ -59,13 +59,13 @@
             startColor: Cesium.Color.RED.withAlpha(0.7),
             endColor: Cesium.Color.YELLOW.withAlpha(0.3),
             startScale: 1,
-            endScale: 4,
+            endScale: 3,
             life: 1,
-            speed: 5,
+            speed: 10,
             width: 20,
             height: 20,
             rate: 400,
-            lifeTime: 1,
+            lifeTime: 2,
             loop: false,
             emitter: new Cesium.SphereEmitter(200),
             modelMatrix: modelMatrix,
@@ -75,13 +75,13 @@
 
     // 设置时间
     var start = Cesium.JulianDate.fromDate(new Date(2018, 6, 5, 8));
-    var stop = Cesium.JulianDate.addSeconds(start, 12, new Cesium.JulianDate()); // 设置总时长120秒
+    var stop = Cesium.JulianDate.addSeconds(start, 120, new Cesium.JulianDate()); // 设置总时长120秒
 
     viewer.clock.startTime = start.clone();
     viewer.clock.stopTime = stop.clone();
     viewer.clock.currentTime = start.clone();
     viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
-    viewer.clock.multiplier = 1; // 10倍速率播放
+    viewer.clock.multiplier = 5; // 10倍速率播放
 
     viewer.timeline.zoomTo(start, stop);
 
@@ -89,22 +89,59 @@
         var property = new Cesium.SampledPositionProperty();
         // 飞机路线
         property.addSample(Cesium.JulianDate.addSeconds(start, 0, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.0, 30.0, 1000));
-        property.addSample(Cesium.JulianDate.addSeconds(start, 5, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.01, 30.0, 1000));
-        property.addSample(Cesium.JulianDate.addSeconds(start, 10, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.02, 30.0, 1000));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 10, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.01, 30.0, 850));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 20, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.02, 30.0, 700));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 30, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.03, 30.0, 500));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 40, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.04, 30.0, 400));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 50, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.05, 30.0, 450));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 60, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.06, 30.0, 500));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 70, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.07, 30.0, 600));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 80, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.08, 30.0, 700));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 90, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.09, 30.0, 800));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 100, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.1, 30.0, 900));
         return property;
     }
 
-    function computeBombTrack() {
+    function computeBomb1Track() {
         var property = new Cesium.SampledPositionProperty();
         // 炸弹路线
-        property.addSample(Cesium.JulianDate.addSeconds(start, 5, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.01, 30.0, 1000));
-        property.addSample(Cesium.JulianDate.addSeconds(start, 7.5, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.015, 30.0, 750));
-        property.addSample(Cesium.JulianDate.addSeconds(start, 10, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.02, 30.0, 0));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 20, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.02, 30.0, 700));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 25, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.025, 30.0, 500));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 30, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.03, 30.0, 0));
         return property;
     }
 
+    var bomb1start = Cesium.JulianDate.addSeconds(start, 20, new Cesium.JulianDate());
+    var bomb1stop = Cesium.JulianDate.addSeconds(start, 30, new Cesium.JulianDate());
+
+    function computeBomb2Track() {
+        var property = new Cesium.SampledPositionProperty();
+        // 炸弹路线
+        property.addSample(Cesium.JulianDate.addSeconds(start, 30, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.03, 30.0, 500));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 35, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.035, 30.0, 300));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 40, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.04, 30.0, 0));
+        return property;
+    }
+
+    var bomb2start = Cesium.JulianDate.addSeconds(start, 30, new Cesium.JulianDate());
+    var bomb2stop = Cesium.JulianDate.addSeconds(start, 40, new Cesium.JulianDate());
+
+    function computeBomb3Track() {
+        var property = new Cesium.SampledPositionProperty();
+        // 炸弹路线
+        property.addSample(Cesium.JulianDate.addSeconds(start, 40, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.04, 30.0, 400));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 45, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.045, 30.0, 280));
+        property.addSample(Cesium.JulianDate.addSeconds(start, 50, new Cesium.JulianDate()), Cesium.Cartesian3.fromDegrees(114.05, 30.0, 0));
+        return property;
+    }
+
+    var bomb3start = Cesium.JulianDate.addSeconds(start, 40, new Cesium.JulianDate());
+    var bomb3stop = Cesium.JulianDate.addSeconds(start, 50, new Cesium.JulianDate());
+
     var airPosition = computeAirPlaneTrack();
-    var bombPosition = computeBombTrack();
+    var bomb1Position = computeBomb1Track();
+    var bomb2Position = computeBomb2Track();
+    var bomb3Position = computeBomb3Track();
 
     var airEntity = viewer.entities.add({
         availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
@@ -116,43 +153,146 @@
         model: {
             uri: 'Cesium_Air.gltf',
             minimumPixelSize: 64
-        }
+        },
+        // path: {
+        //     resolution: 1,
+        //     material: new Cesium.PolylineGlowMaterialProperty({
+        //         glowPower: 0.2,
+        //         color: Cesium.Color.YELLOW
+        //     }),
+        //     width: 10
+        // }
     });
 
-    var bombEntity = viewer.entities.add({
+    var bomb1Entity = viewer.entities.add({
         availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
-            start: start,
-            stop: stop
+            start: bomb1start,
+            stop: bomb1stop
         })]),
-        position: bombPosition,
-        orientation: new Cesium.VelocityOrientationProperty(bombPosition),
+        position: bomb1Position,
+        orientation: new Cesium.VelocityOrientationProperty(bomb1Position),
         model: {
-            uri: 'CesiumBalloon.glb',
-            minimumPixelSize: 24
-        }
+            uri: 'bomb.gltf',
+            minimumPixelSize: 24,
+            color: Cesium.Color.GREY.withAlpha(0.8)
+        },
+        // path: {
+        //     resolution: 1,
+        //     material: new Cesium.PolylineGlowMaterialProperty({
+        //         glowPower: 0.2,
+        //         color: Cesium.Color.YELLOW
+        //     }),
+        //     width: 10
+        // }
+    });
+
+    var bomb2Entity = viewer.entities.add({
+        availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+            start: bomb2start,
+            stop: bomb2stop
+        })]),
+        position: bomb2Position,
+        orientation: new Cesium.VelocityOrientationProperty(bomb2Position),
+        model: {
+            uri: 'bomb.gltf',
+            minimumPixelSize: 24,
+            color: Cesium.Color.GREY.withAlpha(0.8)
+        },
+        // path: {
+        //     resolution: 1,
+        //     material: new Cesium.PolylineGlowMaterialProperty({
+        //         glowPower: 0.2,
+        //         color: Cesium.Color.YELLOW
+        //     }),
+        //     width: 10
+        // }
+    });
+
+    var bomb3Entity = viewer.entities.add({
+        availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+            start: bomb3start,
+            stop: bomb3stop
+        })]),
+        position: bomb3Position,
+        orientation: new Cesium.VelocityOrientationProperty(bomb3Position),
+        model: {
+            uri: 'bomb.gltf',
+            minimumPixelSize: 24,
+            color: Cesium.Color.GREY.withAlpha(0.8)
+        },
+        // path: {
+        //     resolution: 1,
+        //     material: new Cesium.PolylineGlowMaterialProperty({
+        //         glowPower: 0.2,
+        //         color: Cesium.Color.YELLOW
+        //     }),
+        //     width: 10
+        // }
     });
 
     airEntity.position.setInterpolationOptions({
-        interpolationDegree: 1,
-        interpolationAlgorithm: Cesium.LinearApproximation
-    });
-
-    bombEntity.position.setInterpolationOptions({
         interpolationDegree: 5,
         interpolationAlgorithm: Cesium.LagrangePolynomialApproximation
     });
 
-    var flag = true;
+    bomb1Entity.position.setInterpolationOptions({
+        interpolationDegree: 10,
+        interpolationAlgorithm: Cesium.LagrangePolynomialApproximation
+    });
+
+    bomb2Entity.position.setInterpolationOptions({
+        interpolationDegree: 10,
+        interpolationAlgorithm: Cesium.LagrangePolynomialApproximation
+    });
+
+    bomb3Entity.position.setInterpolationOptions({
+        interpolationDegree: 10,
+        interpolationAlgorithm: Cesium.LagrangePolynomialApproximation
+    });
+
+    var flag1 = true;
+    var flag2 = true;
+    var flag3 = true;
     scene.preRender.addEventListener(function (scene, time) {
-        if (flag && Cesium.JulianDate.greaterThanOrEquals(viewer.timeline._clock.currentTime, Cesium.JulianDate.addSeconds(start, 10, new Cesium.JulianDate()))) {
-            var position = Cesium.Cartesian3.fromDegrees(114.02, 30.0, 1);
+        if (flag1 && Cesium.JulianDate.greaterThanOrEquals(viewer.timeline._clock.currentTime, Cesium.JulianDate.addSeconds(start, 30, new Cesium.JulianDate()))) {
+            var position = Cesium.Cartesian3.fromDegrees(114.03, 30.0, 1);
             addBomb(position);
-            flag = false;
-        }
-        if (Cesium.JulianDate.lessThan(viewer.timeline._clock.currentTime, Cesium.JulianDate.addSeconds(start, 10, new Cesium.JulianDate()))) {
-            flag = true;
+            flag1 = false;
+        } else if (flag2 && Cesium.JulianDate.greaterThanOrEquals(viewer.timeline._clock.currentTime, Cesium.JulianDate.addSeconds(start, 40, new Cesium.JulianDate()))) {
+            var position = Cesium.Cartesian3.fromDegrees(114.04, 30.0, 1);
+            addBomb(position);
+            flag2 = false;
+        } else if (flag3 && Cesium.JulianDate.greaterThanOrEquals(viewer.timeline._clock.currentTime, Cesium.JulianDate.addSeconds(start, 50, new Cesium.JulianDate()))) {
+            var position = Cesium.Cartesian3.fromDegrees(114.05, 30.0, 1);
+            addBomb(position);
+            flag3 = false;
+        } else if (Cesium.JulianDate.lessThanOrEquals(viewer.timeline._clock.currentTime, Cesium.JulianDate.addSeconds(start, 10, new Cesium.JulianDate()))) {
+            flag1 = true;
+            flag2 = true;
+            flag3 = true;
         }
     });
+
+    /**
+     * 获取当前视角
+     */
+    function getCamera() {
+        var heading = scene.camera.heading;
+        var pitch = scene.camera.pitch;
+        var roll = scene.camera.roll;
+        var position = scene.camera.position;
+        var ellipsoid = scene.globe.ellipsoid;
+        var cartographic = ellipsoid.cartesianToCartographic(position);
+        var lat = Cesium.Math.toDegrees(cartographic.latitude);
+        var lon = Cesium.Math.toDegrees(cartographic.longitude);
+        var height = cartographic.height;
+        console.log(heading);
+        console.log(pitch);
+        console.log(roll);
+        console.log(lon);
+        console.log(lat);
+        console.log(height);
+    }
 
 </script>
 </body>
