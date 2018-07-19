@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>三维场景</title>
+    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="../libs/supermap/pretty.css">
+    <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../libs/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+    </style>
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+
+<script>
+
+    var TENSE_IMG0 = 'http://www.supermapol.com/realspace/services/3D-HuanJingJianCe/rest/realspace/datas/rs0300@%E6%88%BF%E5%B1%B1';//环境监测时态影像SCI（房山）
+    var TENSE_IMG1 = 'http://www.supermapol.com/realspace/services/3D-HuanJingJianCe/rest/realspace/datas/rs0310@%E6%88%BF%E5%B1%B1';//环境监测时态影像SCI（房山）
+    var TENSE_IMG2 = 'http://www.supermapol.com/realspace/services/3D-HuanJingJianCe/rest/realspace/datas/rs0330@%E6%88%BF%E5%B1%B1';//环境监测时态影像SCI（房山）
+    var TENSE_IMG3 = 'http://www.supermapol.com/realspace/services/3D-HuanJingJianCe/rest/realspace/datas/rs0340@%E6%88%BF%E5%B1%B1';//环境监测时态影像SCI（房山）
+    var TENSE_IMG4 = 'http://www.supermapol.com/realspace/services/3D-HuanJingJianCe/rest/realspace/datas/rs0350@%E6%88%BF%E5%B1%B1';//环境监测时态影像SCI（房山）
+    var TENSE_IMG5 = 'http://www.supermapol.com/realspace/services/3D-HuanJingJianCe/rest/realspace/datas/rs0400@%E6%88%BF%E5%B1%B1';//环境监测时态影像SCI（房山）
+    var TENSE_IMG6 = 'http://www.supermapol.com/realspace/services/3D-HuanJingJianCe/rest/realspace/datas/rs0410@%E6%88%BF%E5%B1%B1';//环境监测时态影像SCI（房山）
+    var TENSE_IMG7 = 'http://www.supermapol.com/realspace/services/3D-HuanJingJianCe/rest/realspace/datas/rs0420@%E6%88%BF%E5%B1%B1';//环境监测时态影像SCI（房山）
+    var TENSE_IMG8 = 'http://www.supermapol.com/realspace/services/3D-HuanJingJianCe/rest/realspace/datas/rs0430@%E6%88%BF%E5%B1%B1';//环境监测时态影像SCI（房山）
+    var TENSE_IMG9 = 'http://www.supermapol.com/realspace/services/3D-HuanJingJianCe/rest/realspace/datas/rs0440@%E6%88%BF%E5%B1%B1';//环境监测时态影像SCI（房山）
+    var TENSE_IMG10 = 'http://www.supermapol.com/realspace/services/3D-HuanJingJianCe/rest/realspace/datas/rs0450@%E6%88%BF%E5%B1%B1';//环境监测时态影像SCI（房山）
+
+    var imgs = [TENSE_IMG0, TENSE_IMG1, TENSE_IMG2, TENSE_IMG3, TENSE_IMG4, TENSE_IMG5, TENSE_IMG6, TENSE_IMG7, TENSE_IMG8, TENSE_IMG9, TENSE_IMG10];
+
+    var num = 1;
+
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer("cesiumContainer", {
+            animation: true, //创建动画部件
+            imageryProvider: Cesium.createOpenStreetMapImageryProvider({
+                url: 'https://a.tile.openstreetmap.org/'
+            })
+        });
+        var imageryProvider0 = new Cesium.SuperMapImageryProvider({
+            url: imgs[0]
+        });
+        var imageryProvider1 = new Cesium.SuperMapImageryProvider({
+            url: imgs[1]
+        });
+        var layer0 = viewer.imageryLayers.addImageryProvider(imageryProvider0);
+        var layer1 = viewer.imageryLayers.addImageryProvider(imageryProvider1);
+
+        layer0.alpha = 1;
+        layer1.alpha = 0;
+
+        function changeTimeFormatter(layer0, layer1, imageryProviders) {
+            // 剔除看不见了的
+            viewer.imageryLayers.remove(layer0);
+
+            //将layer0指向下一个图层,并将它先设置成完全透明
+            imageryProvider0 = new Cesium.SuperMapImageryProvider({
+                url: imgs[num++]
+            });
+            if (num == imgs.length - 1){
+                num = 1;
+            }
+            console.log(num);
+
+            layer0 = viewer.imageryLayers.addImageryProvider(imageryProvider0);
+            layer0.alpha = 0;
+            layer1.alpha = 1;
+
+            //改变该回调函数，执行下一轮渐变
+            viewer.animation.viewModel.timeFormatter = function(date, viewModel) {
+                if(layer1.alpha >= 0 ) {
+                    layer1.alpha -= 0.005;
+                    layer0.alpha += 0.005;
+                }
+                if(layer1.alpha < 0) {
+                    //执行下一轮渐变
+                    changeTimeFormatter(layer1, layer0, imageryProviders);
+                }
+            }
+        }
+
+        viewer.animation.viewModel.timeFormatter = function (date, viewModel) {
+
+            //在layer0完全透明前，layer0透明度减少，layer1透明度增加
+            if (layer0.alpha >= 0) {
+                layer0.alpha -= 0.005;
+                layer1.alpha += 0.005;
+            } else {
+                //当第一个图层完全透明,开始执行下一轮渐变
+                changeTimeFormatter(layer0, layer1);
+            }
+        };
+
+        viewer.flyTo(layer0);
+
+        $('#loadingbar').remove();
+    }
+</script>
+</body>
+
+</html>
