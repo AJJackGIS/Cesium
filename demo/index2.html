@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>三维地球</title>
-    <script type="text/javascript" src="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
-    <link rel="stylesheet" href="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
+    <script type="text/javascript" src="http://172.29.1.151:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="http://172.29.1.151:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
           type="text/css"/>
     <style>
         html, body, #map3d {
@@ -49,7 +49,7 @@
     });
 
     var tileSet = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
-        url: 'http://10.129.56.56:8080/model/build2/tileset.json'
+        url: 'http://172.29.1.151:8080/model/build2/tileset.json'
     }));
 
     tileSet.style = new Cesium.Cesium3DTileStyle({

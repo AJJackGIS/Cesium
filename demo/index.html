@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>三维地球</title>
-    <script type="text/javascript" src="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
-    <link rel="stylesheet" href="http://10.129.56.56:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
+    <script type="text/javascript" src="http://172.29.1.151:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="http://172.29.1.151:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
           type="text/css"/>
     <style>
         html, body, #map3d {
@@ -48,14 +48,14 @@
             minimumLevel: 1,
             maximumLevel: 22
         }), //地图底图数据提供==谷歌影像
-        // imageryProvider : Cesium.createOpenStreetMapImageryProvider({
-        //     url : 'https://a.tile.openstreetmap.org/'
-        // }), //地图底图数据提供==OpenStreetMap
-        terrainProvider: new Cesium.CesiumTerrainProvider({
-            url: "https://www.supermapol.com/iserver/services/3D-stk_terrain/rest/realspace/datas/info/data/path/",
-            requestWaterMask: true,
-            requestVertexNormals: true
-        }) //地球地形数据提供==超图
+        imageryProvider : Cesium.createOpenStreetMapImageryProvider({
+            url : 'https://a.tile.openstreetmap.org/'
+        }), //地图底图数据提供==OpenStreetMap
+        // terrainProvider: new Cesium.CesiumTerrainProvider({
+        //     url: "https://www.supermapol.com/iserver/services/3D-stk_terrain/rest/realspace/datas/info/data/path/",
+        //     requestWaterMask: true,
+        //     requestVertexNormals: true
+        // }) //地球地形数据提供==超图
         // terrainProvider: new Cesium.CesiumTerrainProvider({
         //     url: 'http://assets.agi.com/stk-terrain/v1/tilesets/world/tiles',
         //     requestWaterMask : true,
