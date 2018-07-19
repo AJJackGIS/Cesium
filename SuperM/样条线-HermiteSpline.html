@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>样条线HermiteSpline</title>
+    <script type="text/javascript" src="http://172.29.1.151:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="http://172.29.1.151:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
+          type="text/css"/>
+    <style>
+        html, body, #map3d {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+<div id="map3d"></div>
+<script>
+    var viewer = new Cesium.Viewer('map3d', {
+        baseLayerPicker: false,
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        })
+    });
+
+    var controls = [
+        new Cesium.Cartesian3(1235398.0, -4810983.0, 4146266.0),
+        new Cesium.Cartesian3(1372574.0, -5345182.0, 4606657.0),
+        new Cesium.Cartesian3(-757983.0, -5542796.0, 4514323.0),
+        new Cesium.Cartesian3(-2821260.0, -5248423.0, 4021290.0),
+        new Cesium.Cartesian3(-2539788.0, -4724797.0, 3620093.0)
+    ];
+
+    for (var i = 0; i < controls.length; i++) {
+        viewer.entities.add({
+            position: controls[i],
+            point: {
+                color: Cesium.Color.YELLOW_GREEN,
+                pixelSize: 10
+            }
+        });
+    }
+    viewer.zoomTo(viewer.entities);
+
+    // HermiteSpline
+    //
+
+    var spline = Cesium.HermiteSpline.createNaturalCubic({
+        times: [0.0, 0.25, 0.5, 0.75, 1],
+        points: controls
+    });
+
+    var positions = [];
+    for (var i = 0; i <= 100; i++) {
+        var cartesian3 = spline.evaluate(i / 100);
+        positions.push(cartesian3);
+        viewer.entities.add({
+            position: cartesian3,
+            point: {
+                color: Cesium.Color.WHITE,
+                pixelSize: 6
+            }
+        });
+    }
+
+    viewer.entities.add({
+        polyline: {
+            positions: positions,
+            width: 3,
+            material: Cesium.Color.RED
+        }
+    });
+
+</script>
+</body>
+</html>
