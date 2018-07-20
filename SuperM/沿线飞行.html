@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>沿线飞行</title>
+    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="../libs/supermap/pretty.css">
+    <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../libs/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        .tool-bar {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            z-index: 10000;
+        }
+
+        .param-container {
+            background-color: rgba(38, 38, 38, 0.75);
+            padding: 20px 20px 10px 20px;
+            color: #ffffff;
+            border: 1px solid #526f82;
+        }
+
+        #play {
+            content: url(images/play.png);
+            height: 30px;
+            padding: 5px;
+        }
+
+        #pause {
+            content: url(images/pause.png);
+            height: 30px;
+            padding: 5px;
+        }
+
+        #stop {
+            content: url(images/stop.png);
+            height: 30px;
+            padding: 5px;
+        }
+    </style>
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id='toolbar' class="param-container tool-bar">
+    <span type="button" id="play" class="button black" title="开始"></span>
+    <span type="button" id="pause" class="button black" title="暂停"></span>
+    <span type="button" id="stop" class="button black" title="停止"></span>
+    <div style="width: 150px;">
+        <select id="stopList" class="selectpicker show-tick form-control">
+            <!--<option disabled selected value>&#45;&#45;选择站点&#45;&#45;</option>-->
+        </select>
+    </div>
+</div>
+<script>
+    /**
+     * 全局对象
+     * @type {null}
+     */
+    var viewer = null;
+    var scene = null;
+    var flyManager;
+
+    function onload(Cesium) {
+
+        //初始化viewer部件
+        viewer = new Cesium.Viewer('cesiumContainer', {
+            infoBox: true,
+            selectionIndicator: false,
+            imageryProvider: new Cesium.BingMapsImageryProvider({
+                url: 'https://dev.virtualearth.net',
+                key: 'Ao42l-0u7fJXMmQSGY0_5zW6kfuHPeTtanya4rs8bItYH982UV42_xNccLDq70lY',
+                mapStyle: Cesium.BingMapsStyle.AERIAL
+            })
+        });
+
+        scene = viewer.scene;
+        scene.globe.depthTestAgainstTerrain = false;
+        var widget = viewer.cesiumWidget;
+        $('#loadingbar').remove();
+        try {
+
+            var abc = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-FOZHULING/rest/realspace/datas/ABC/config", {name: 'abc'});
+
+            abc.then(function (layer) {
+                layer.selectEnabled = false;
+                layer.hasLight = false; //关闭光照  关键
+                layer.style3D._fillForeColor.alpha = 1;
+            });
+
+            Cesium.when(abc, function (layer) {
+                if (!scene.pickPositionSupported) {
+                    alert('不支持深度拾取,属性查询功能无法使用！');
+                }
+                //设置相机视角
+                scene.camera.setView({
+                    destination: new Cesium.Cartesian3.fromDegrees(114.44206211550622, 30.443255137917298, 66.95554732116818),
+                    orientation: {
+                        heading: 4.542065333060519,
+                        pitch: -0.24412114065229407,
+                        roll: 6.283185307169116
+                    }
+                });
+
+                // 飞行路线集合对象
+                var routes = new Cesium.RouteCollection();
+                //添加fpf飞行文件，fpf由SuperMap iDesktop生成
+                var fpfUrl = 'routefly.fpf';
+                routes.fromFile(fpfUrl);
+                //初始化飞行管理,控制飞行的开始、暂停、停止以及站点事件等
+                flyManager = new Cesium.FlyManager({
+                    scene: scene,
+                    routes: routes
+                });
+                flyManager.playRate = 2.0; //获取或者设置飞行路线的飞行速率，大于1.0加速，小于1.0减速
+                //注册站点到达事件
+                flyManager.stopArrived.addEventListener(function (routeStop) {
+                    var stopName = routeStop.stopName;
+                    var entity = new Cesium.Entity({
+                        description: '到达站点 : ' + stopName,
+                        name: stopName
+                    });
+                    viewer.selectedEntity = entity;
+                    setTimeout(function () {
+                        viewer.selectedEntity = undefined;
+                    }, 1000);
+                    routeStop.waitTime = 1;
+                });
+                if (flyManager.readyPromise) {
+                    //生成飞行文件中的所有站点列表
+                    Cesium.when(flyManager.readyPromise, function () {
+                        var allStops = flyManager.getAllRouteStops();
+                        var menu = document.getElementById('stopList');
+                        var flyLine = [];
+                        for (var i = 0, j = allStops.length; i < j; i++) {
+                            var option = document.createElement('option');
+                            //option.textContent = allStops[i].stopName;
+                            option.textContent = "站点 " + (i + 1);
+                            option.value = allStops[i].index;
+                            menu.appendChild(option);
+                            flyLine.push(allStops[i].point);
+                            viewer.entities.add({
+                                position: allStops[i].point,
+                                point: {
+                                    pixelSize: 10
+                                }
+                            });
+                        }
+                        var polyline = viewer.entities.add({
+                            polyline: {
+                                positions: flyLine,
+                                width: 10,
+                                followSurface: false,
+                                material: new Cesium.PolylineArrowMaterialProperty(Cesium.Color.RED)
+                            }
+                        });
+                        $('#stopList').selectpicker('refresh');
+                        // 注册站点切换事件
+                        $('#stopList').change(function () {
+                            flyManager && flyManager.pause();
+                            var index = parseInt($(this).val());
+                            var route = flyManager.currentRoute;
+                            var stop = route.get(index);
+                            flyManager.currentStopIndex = index;
+                            flyManager.viewToStop(stop);
+                            flyManager && flyManager.pause();
+                        });
+                        flyManager.play();
+                    });
+                }
+                $('#play').click(function () {
+                    flyManager && flyManager.play();
+                });
+                $('#pause').click(function () {
+                    flyManager && flyManager.pause();
+                });
+                $('#stop').click(function () {
+                    flyManager && flyManager.stop();
+                });
+                $('#toolbar').show();
+                $('#loadingbar').remove();
+
+            }, function (e) {
+                if (widget._showRenderLoopErrors) {
+                    var title = '渲染时发生错误，已停止渲染。';
+                    widget.showErrorPanel(title, undefined, e);
+                }
+            });
+        } catch (e) {
+            if (widget._showRenderLoopErrors) {
+                var title = '渲染时发生错误，已停止渲染。';
+                widget.showErrorPanel(title, undefined, e);
+            }
+        }
+    }
+</script>
+</body>
+
+</html>
