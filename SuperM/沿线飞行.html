@@ -84,7 +84,7 @@
     <span type="button" id="pause" class="button black" title="暂停"></span>
     <span type="button" id="stop" class="button black" title="停止"></span>
     <div style="width: 150px;">
-        <select id="stopList" class="selectpicker show-tick form-control">
+        <select id="stopList" class="cesium-button">
             <!--<option disabled selected value>&#45;&#45;选择站点&#45;&#45;</option>-->
         </select>
     </div>
@@ -152,7 +152,7 @@
                 flyManager.playRate = 2.0; //获取或者设置飞行路线的飞行速率，大于1.0加速，小于1.0减速
                 //注册站点到达事件
                 flyManager.stopArrived.addEventListener(function (routeStop) {
-                    var stopName = routeStop.stopName;
+                    var stopName = routeStop.stopName; // 获取站点的名称
                     var entity = new Cesium.Entity({
                         description: '到达站点 : ' + stopName,
                         name: stopName
@@ -161,18 +161,17 @@
                     setTimeout(function () {
                         viewer.selectedEntity = undefined;
                     }, 1000);
-                    routeStop.waitTime = 1;
+                    routeStop.waitTime = 1; //在本站点停留的时间
                 });
                 if (flyManager.readyPromise) {
                     //生成飞行文件中的所有站点列表
                     Cesium.when(flyManager.readyPromise, function () {
-                        var allStops = flyManager.getAllRouteStops();
+                        var allStops = flyManager.getAllRouteStops(); //获取当前飞行路线的所有站点
                         var menu = document.getElementById('stopList');
                         var flyLine = [];
                         for (var i = 0, j = allStops.length; i < j; i++) {
                             var option = document.createElement('option');
-                            //option.textContent = allStops[i].stopName;
-                            option.textContent = "站点 " + (i + 1);
+                            option.textContent = "站点 " + (i + 1) + " - " + allStops[i].stopName;
                             option.value = allStops[i].index;
                             menu.appendChild(option);
                             flyLine.push(allStops[i].point);
@@ -195,24 +194,24 @@
                         // 注册站点切换事件
                         $('#stopList').change(function () {
                             flyManager && flyManager.pause();
-                            var index = parseInt($(this).val());
-                            var route = flyManager.currentRoute;
-                            var stop = route.get(index);
-                            flyManager.currentStopIndex = index;
-                            flyManager.viewToStop(stop);
+                            var index = parseInt($(this).val()); // 当前站的index
+                            var route = flyManager.currentRoute; // 获取当前飞行路线
+                            var stop = route.get(index); // 通过索引获取该飞行路线的站点
+                            flyManager.currentStopIndex = index; // 获取或者设置当前站点索引（指定从该站点开始飞行）
+                            flyManager.viewToStop(stop); //站点定位
                             flyManager && flyManager.pause();
                         });
                         flyManager.play();
                     });
                 }
                 $('#play').click(function () {
-                    flyManager && flyManager.play();
+                    flyManager && flyManager.play(); //开始飞行
                 });
                 $('#pause').click(function () {
-                    flyManager && flyManager.pause();
+                    flyManager && flyManager.pause(); //暂停飞行
                 });
                 $('#stop').click(function () {
-                    flyManager && flyManager.stop();
+                    flyManager && flyManager.stop(); //停止飞行
                 });
                 $('#toolbar').show();
                 $('#loadingbar').remove();
