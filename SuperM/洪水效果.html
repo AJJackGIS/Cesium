@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>洪水效果-覆盖面</title>
+    <meta>
+    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="../libs/supermap/pretty.css">
+    <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../libs/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        .cesium-viewer-bottom {
+            display: none;
+        }
+        .timeDiv{
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+        .controlButton{
+            position: absolute;
+            top: 40px;
+            left: 10px;
+        }
+    </style>
+
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div class="timeDiv"></div>
+<div class="controlButton">
+    <button class="cesium-button" onclick="startAnimate()">开始</button>
+    <button class="cesium-button" onclick="pauseAnimate()">暂停</button>
+</div>
+<script>
+    var viewer;
+    function onload(Cesium) {
+        viewer = new Cesium.Viewer('cesiumContainer', {
+            animation: true,
+            imageryProvider: new Cesium.UrlTemplateImageryProvider({
+                url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+            })
+        });
+        viewer.animation.container.style.display = "none";
+
+        $('#loadingbar').remove();
+
+        var scene = viewer.scene;
+        var terrainProvider = new Cesium.CesiumTerrainProvider({
+            url: 'https://assets02.agi.com/stk-terrain/v1/tilesets/world/tiles',
+            //请求水波纹效果
+            requestWaterMask: true,
+            //请求照明
+            requestVertexNormals: true
+        });
+        viewer.terrainProvider = terrainProvider;
+
+        //设置相机视角
+        viewer.scene.camera.setView({
+            destination: new Cesium.Cartesian3.fromDegrees(86.7811, 27.6564, 5358.7096),
+            orientation: {
+                heading: 0.34555839949062594,
+                pitch: -0.1422794351856307,
+                roll: 0.0009471063581933947
+            }
+        });
+
+        //创建分层设色对象
+        var hyp = new Cesium.HypsometricSetting();
+
+        //设置分层设色的显示模式为面
+        hyp.DisplayMode = Cesium.HypsometricSettingEnum.DisplayMode.FACE;
+
+        //设置线颜色为红色
+        hyp.LineColor = new Cesium.Color(1.0, 0.0, 0.0, 1.0);
+
+        //等高线间隔为200m
+        hyp.LineInterval = 200.0;
+
+        //设置分层设色的最大/最小可见高度
+        hyp.MaxVisibleValue = 0;
+        hyp.MinVisibleValue = 0;
+
+        //设置分层设色颜色表的最大/最小key值,表示在此高度范围内显示颜色表
+        hyp.ColorTableMinKey = 1;
+        hyp.ColorTableMaxKey = 9000;
+
+        //新建颜色表
+        var colorTable = new Cesium.ColorTable();
+        var height = 0;
+        //每隔100m向颜色表插入一个随机色
+        for (var i = 0; i < 90; i++) {
+            height += 100;
+            colorTable.insert(height, getRandomColor());
+        }
+        //设置分层设色的颜色表
+        hyp.ColorTable = colorTable;
+
+        //设置分层设色的透明度
+        hyp.Opacity = 0.8;
+
+        //返回随机颜色
+        function getRandomColor() {
+            return new Cesium.Color(0.1, 0.1, 0.1);
+        }
+
+        //设置分层设色区域
+        var pos = new Array();
+        pos.push(86);pos.push(27);pos.push(0); // lon lat height
+        pos.push(86);pos.push(28);pos.push(0);
+        pos.push(87);pos.push(28);pos.push(0);
+        pos.push(87);pos.push(27);pos.push(0);
+        hyp.CoverageArea = pos;
+
+        viewer.scene.globe.HypsometricSetting = {
+            hypsometricSetting: hyp,
+            analysisMode: Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_REGION //局部
+        };
+    }
+
+    function startAnimate() {
+        viewer.animation.viewModel.timeFormatter = function (date, viewModel) {
+            Cesium.JulianDate.addHours(date, 8, date); // 加8小时
+            Cesium.JulianDate.toGregorianDate(date, date); // 转格式
+
+            $(".timeDiv").html(date.year + "-" + date.month + "-" + date.day + " " +
+                date.hour + ":" + date.minute + ":" + date.second + ":" + date.millisecond.toFixed(0));
+            var hyp = viewer.scene.globe.HypsometricSetting.hypsometricSetting;
+            if (hyp.MaxVisibleValue == 9000){
+                viewer.animation.viewModel.timeFormatter = function () {
+                    // 取消
+                };
+                return;
+            }
+            hyp.MaxVisibleValue += 1;
+            viewer.scene.globe.HypsometricSetting.hypsometricSetting = hyp;
+        };
+    }
+
+    function pauseAnimate() {
+        viewer.animation.viewModel.timeFormatter = function () {
+            // 取消
+        };
+    }
+
+</script>
+</body>
+
+</html>
