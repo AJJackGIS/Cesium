@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>模板页</title>
+    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="../libs/supermap/pretty.css">
+    <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../libs/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        .cesium-viewer-bottom {
+            display: none;
+        }
+
+        #slider {
+            position: absolute;
+            left: 50%;
+            top: 0px;
+            background-color: #D3D3D3;
+            width: 20px;
+            height: 100%;
+            z-index: 9999;
+        }
+
+        #slider:hover {
+            cursor: ew-resize;
+        }
+    </style>
+
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="slider"></div>
+<script>
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer', {
+            imageryProvider: new Cesium.UrlTemplateImageryProvider({
+                url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+            })
+        });
+
+        var layers = viewer.imageryLayers;
+        var tdtLayer = layers.addImageryProvider(new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=m@716&x={x}&y={y}&z={z}'
+        }), 1);
+        tdtLayer.splitDirection = Cesium.ImagerySplitDirection.RIGHT; // 新添加的影像图层只显示在滑块右侧
+
+        var scene = viewer.scene;
+        $('#loadingbar').remove();
+
+        //分割条位置与slider同步
+        var slider = document.getElementById('slider');
+        viewer.scene.imagerySplitPosition = 0.5;
+
+
+        var dragStartX = 0;
+        var slider = document.getElementById('slider');
+
+        // 注册点击事件
+        slider.addEventListener('mousedown', mouseDown, false);
+
+        function mouseDown(e) {
+            dragStartX = e.clientX - slider.offsetLeft;
+            console.log(dragStartX);
+            window.addEventListener('mousemove', sliderMove, true);
+        }
+
+        function sliderMove(e) {
+            //解决拖拽鼠标粘滞的bug
+            if (e.preventDefault) {
+                e.preventDefault();
+            } else {
+                e.returnValue = false;
+            }
+
+            var splitPosition = (e.clientX - dragStartX) / slider.parentElement.offsetWidth;
+            console.log(splitPosition);
+            slider.style.left = 100.0 * splitPosition + "%";
+            viewer.scene.imagerySplitPosition = splitPosition;
+        }
+
+        // 全局注册鼠标事件
+        window.addEventListener('mouseup', mouseUp, false);
+
+        function mouseUp() {
+            window.removeEventListener('mousemove', sliderMove, true);
+        }
+
+
+    }
+</script>
+</body>
+
+</html>

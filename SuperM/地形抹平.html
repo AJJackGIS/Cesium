@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>地形抹平</title>
+    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="../libs/supermap/pretty.css">
+    <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../libs/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        .cesium-viewer-bottom {
+            display: none;
+        }
+    </style>
+
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<script>
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer', {
+            imageryProvider: new Cesium.UrlTemplateImageryProvider({
+                url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+            })
+        });
+        var terrainProvider = new Cesium.CesiumTerrainProvider({
+            url: 'https://assets02.agi.com/stk-terrain/v1/tilesets/world/tiles',
+            //请求水波纹效果
+            requestWaterMask: true,
+            //请求照明
+            requestVertexNormals: true
+        });
+        viewer.terrainProvider = terrainProvider;
+        var scene = viewer.scene;
+        $('#loadingbar').remove();
+
+
+        //绘制多边形
+        var handlerPolygon = new Cesium.DrawHandler(viewer, Cesium.DrawMode.Polygon, 0);
+        handlerPolygon.activeEvt.addEventListener(function (isActive) {
+        });
+        handlerPolygon.movingEvt.addEventListener(function (windowPosition) {
+        });
+        handlerPolygon.drawEvt.addEventListener(function (result) {
+            handlerPolygon.polygon.show = false;
+            handlerPolygon.polyline.show = false;
+            var array = [].concat(result.object.positions);
+            var positions = [];
+            for (var i = 0, len = array.length; i < len; i++) {
+                var cartographic = Cesium.Cartographic.fromCartesian(array[i]);
+                var longitude = Cesium.Math.toDegrees(cartographic.longitude);
+                var latitude = Cesium.Math.toDegrees(cartographic.latitude);
+                var h = cartographic.height;
+                if (positions.indexOf(longitude) == -1 && positions.indexOf(latitude) == -1) {
+                    positions.push(longitude);
+                    positions.push(latitude);
+                    positions.push(h);
+                }
+            }
+            // viewer.scene.globe.removeAllModifyRegion();
+            viewer.scene.globe.addModifyRegion({
+                name: 'ggg' + Math.random(),
+                position: positions
+            });
+            handlerPolygon.deactivate();
+            handlerPolygon.activate();
+        });
+        handlerPolygon.activate();
+    }
+</script>
+</body>
+
+</html>
