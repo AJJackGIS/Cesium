@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>BIM</title>
+    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="../libs/supermap/pretty.css">
+    <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../libs/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        .cesium-viewer-bottom {
+            display: none;
+        }
+
+        .layers {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            background-color: #0303037d;
+            color: white;
+        }
+        .layers ul{
+            list-style: none;
+            margin: 0px;
+            padding: 0px 0px 10px 20px;
+        }
+        .layers li{
+            margin: 0px;
+            padding: 2px 5px 2px 20px;
+        }
+    </style>
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div class="layers">
+    <ul> 结构
+        <li><input type="checkbox" checked=checked onclick="toggle('结构基础@结构')">结构基础</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('结构框架@结构')">结构框架</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('结构柱@结构')">结构柱</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('屋顶@结构')">屋顶</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('楼板@结构')">楼板</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('楼梯@结构')">楼梯</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('栏杆扶手@结构')">栏杆扶手</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('顶部扶栏@结构')">顶部扶栏</li>
+    </ul>
+    <ul> 建筑
+        <li><input type="checkbox" checked=checked onclick="toggle('墙@建筑')">墙</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('楼梯@建筑')">楼梯</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('楼板@建筑')">楼板</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('栏杆扶手@建筑')">栏杆扶手</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('顶部扶栏@建筑')">顶部扶栏</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('门@建筑')">门</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('窗@建筑')">窗</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('幕墙嵌板@建筑')">幕墙嵌板</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('幕墙竖梃@建筑')">幕墙竖梃</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('结构框架@建筑')">结构框架</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('坡道@建筑')">坡道</li>
+        <li><input type="checkbox" checked=checked onclick="toggle('墙饰条@建筑')">墙饰条</li>
+    </ul>
+</div>
+<script>
+    var viewer = null;
+    var scene = null;
+
+    function onload(Cesium) {
+        viewer = new Cesium.Viewer('cesiumContainer');
+        scene = viewer.scene;
+        scene.globe.baseColor = new Cesium.Color(0.0, 0.0, 0.0, 1.0); // 没有影像时地球的基础颜色，默认为蓝色
+        scene.globe.show = false; // 是否显示地球
+        scene.globe.depthTestAgainstTerrain = true;
+        scene.imageryLayers.removeAll(true); // 移除所有imagery
+        $('#loadingbar').remove();
+
+        var promise1 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/屋顶@结构/config", {name: "屋顶@结构"});
+        Cesium.when(promise1, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '结构',
+                dataSetName: '屋顶',
+                keyWord: 'SmID'
+            });
+        });
+        var promise2 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/楼梯@建筑/config", {name: "楼梯@建筑"});
+        Cesium.when(promise2, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '建筑',
+                dataSetName: '楼梯',
+                keyWord: 'SmID'
+            });
+        });
+        var promise3 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/窗@建筑/config", {name: "窗@建筑"});
+        Cesium.when(promise3, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '建筑',
+                dataSetName: '窗',
+                keyWord: 'SmID'
+            });
+        });
+        var promise4 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/栏杆扶手@结构/config", {name: "栏杆扶手@结构"});
+        Cesium.when(promise4, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '结构',
+                dataSetName: '栏杆扶手',
+                keyWord: 'SmID'
+            });
+        });
+        var promise5 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/顶部扶栏@建筑/config", {name: "顶部扶栏@建筑"});
+        Cesium.when(promise5, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '建筑',
+                dataSetName: '顶部扶栏',
+                keyWord: 'SmID'
+            });
+        });
+        var promise6 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/楼梯@结构/config", {name: "楼梯@结构"});
+        Cesium.when(promise6, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '结构',
+                dataSetName: '楼梯',
+                keyWord: 'SmID'
+            });
+        });
+        var promise7 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/顶部扶栏@结构/config", {name: "顶部扶栏@结构"});
+        Cesium.when(promise7, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '结构',
+                dataSetName: '顶部扶栏',
+                keyWord: 'SmID'
+            });
+        });
+        var promise8 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/栏杆扶手@建筑/config", {name: "栏杆扶手@建筑"});
+        Cesium.when(promise8, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '建筑',
+                dataSetName: '栏杆扶手',
+                keyWord: 'SmID'
+            });
+        });
+        var promise9 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/楼板@结构/config", {name: "楼板@结构"});
+        Cesium.when(promise9, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '结构',
+                dataSetName: '楼板',
+                keyWord: 'SmID'
+            });
+        });
+        var promise10 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/幕墙嵌板@建筑/config", {name: "幕墙嵌板@建筑"});
+        Cesium.when(promise10, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '建筑',
+                dataSetName: '幕墙嵌板',
+                keyWord: 'SmID'
+            });
+        });
+        var promise11 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/结构框架@结构/config", {name: "结构框架@结构"});
+        Cesium.when(promise11, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '结构',
+                dataSetName: '结构框架',
+                keyWord: 'SmID'
+            });
+        });
+        var promise12 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/门@建筑/config", {name: "门@建筑"});
+        Cesium.when(promise12, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '建筑',
+                dataSetName: '门',
+                keyWord: 'SmID'
+            });
+        });
+        var promise13 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/墙@建筑/config", {name: "墙@建筑"});
+        Cesium.when(promise13, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '建筑',
+                dataSetName: '墙',
+                keyWord: 'SmID'
+            });
+        });
+        var promise14 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/墙饰条@建筑/config", {name: "墙饰条@建筑"});
+        Cesium.when(promise14, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '建筑',
+                dataSetName: '墙饰条',
+                keyWord: 'SmID'
+            });
+        });
+        var promise15 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/结构基础@结构/config", {name: "结构基础@结构"});
+        Cesium.when(promise15, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '结构',
+                dataSetName: '结构基础',
+                keyWord: 'SmID'
+            });
+        });
+        var promise16 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/幕墙竖梃@建筑/config", {name: "幕墙竖梃@建筑"});
+        Cesium.when(promise16, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '建筑',
+                dataSetName: '幕墙竖梃',
+                keyWord: 'SmID'
+            });
+        });
+        var promise17 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/楼板@建筑/config", {name: "楼板@建筑"});
+        Cesium.when(promise17, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '建筑',
+                dataSetName: '楼板',
+                keyWord: 'SmID'
+            });
+        });
+        var promise18 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/坡道@建筑/config", {name: "坡道@建筑"});
+        Cesium.when(promise18, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '建筑',
+                dataSetName: '坡道',
+                keyWord: 'SmID'
+            });
+        });
+        var promise19 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/结构柱@结构/config", {name: "结构柱@结构"});
+        Cesium.when(promise19, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '结构',
+                dataSetName: '结构柱',
+                keyWord: 'SmID'
+            });
+        });
+        var promise20 = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-HongXinYuanQu/rest/realspace/datas/结构框架@建筑/config", {name: "结构框架@建筑"});
+        Cesium.when(promise20, function (layer) {
+            //设置属性查询参数
+            layer.setQueryParameter({
+                url: 'http://172.29.1.151:8090/iserver/services/data-HongXinYuanQu/rest/data',
+                dataSourceName: '建筑',
+                dataSetName: '结构框架',
+                keyWord: 'SmID'
+            });
+        });
+
+        var promises = [promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9, promise10,
+            promise11, promise12, promise13, promise14, promise15, promise16, promise17, promise18, promise19, promise20];
+
+        Cesium.when.all(promises, function (layer) {
+            scene.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(115.50142405008323, 30.50063049630867, 35.48096279815383),
+                orientation: {
+                    heading: 4.695710252393422,
+                    pitch: -0.4789857731977838,
+                    roll: 6.283185307104354
+                }
+            });
+        });
+
+        var selectEntity = new Cesium.Entity();
+        //注册鼠标点击事件
+        viewer.pickEvent.addEventListener(function (feature) {
+            var propertyHtml = "";
+            for (var key in feature) {
+                propertyHtml += "<tr><td>" + key + "</td><td>" +
+                    feature[key] + "</td></tr>";
+            }
+            selectEntity.name = feature["CATEGORYNAME"];
+            selectEntity.description = "<table class='cesium-infoBox-defaultTable'><tbody> " +
+                propertyHtml + " </tbody></table>";
+            viewer.selectedEntity = selectEntity;
+        });
+    }
+
+    function toggle(name) {
+        var layer = scene.layers.find(name);
+        if (Cesium.defined(layer)){
+            layer.visible = !layer.visible;
+        }
+    }
+</script>
+</body>
+
+</html>
