@@ -56,37 +56,37 @@
 <div style="position: absolute; left: 10px; top: 10px">
     <button onclick="start()" class="cesium-button">开始</button>
 </div>
-<div style="position: absolute; right: 10px; top: 10px">
+<div style="position: absolute; right: 10px; top: 10px; color: white">
     <div>
         <label>方向(度)</label>
-        <input type="range" id="direction" min="0" max="360" step="1.0" title="方向" oninput="changeDirection()">
-        <input type="text" size="5">
+        <input type="range" id="direction" min="0" max="360" step="1.0" value="270" title="方向" oninput="changeDirection()">
+        <input type="text" size="5" value="270">
     </div>
 
     <div>
         <label>翻转(度)</label>
-        <input type="range" id="pitch" min="-90" max="90" step="1.0" value="1" title="翻转" oninput="changePitch()">
-        <input type="text" size="5">
+        <input type="range" id="pitch" min="-90" max="90" step="1.0" value="-30" title="翻转" oninput="changePitch()">
+        <input type="text" size="5" value="-30">
     </div>
 
     <div>
         <label>距离(米)</label>
-        <input type="range" id="distance" min="1" max="500" step="1.0" value="1" title="距离" oninput="changeDistance()">
-        <input type="text" size="5">
+        <input type="range" id="distance" min="1" max="500" step="1.0" value="100" title="距离" oninput="changeDistance()">
+        <input type="text" size="5" value="100">
     </div>
 
     <div>
         <label>水平视场角(度)</label>
-        <input type="range" id="horizonalFov" min="1" max="120" step="1" value="1" title="水平视场角"
+        <input type="range" id="horizonalFov" min="1" max="120" step="1" value="30" title="水平视场角"
                oninput="changeHorizonalFov()">
-        <input type="text" size="5">
+        <input type="text" size="5" value="30">
     </div>
 
     <div>
         <label>垂直视场角(度)</label>
-        <input type="range" id="verticalFov" min="1" max="90" step="1.0" value="1" title="垂直视场角"
+        <input type="range" id="verticalFov" min="1" max="90" step="1.0" value="40" title="垂直视场角"
                oninput="changeVerticalFov()">
-        <input type="text" size="5">
+        <input type="text" size="5" value="40">
     </div>
 </div>
 </body>

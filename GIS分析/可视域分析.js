@@ -42,7 +42,6 @@ function onload(Cesium) {
                     roll: 1.509903313490213e-14
                 }
             });
-            sightline.build();
         }, function (e) {
             if (widget._showRenderLoopErrors) {
                 var title = '渲染时发生错误，已停止渲染。';
@@ -62,19 +61,20 @@ function onload(Cesium) {
 
 function start() {
 
-    viewshed3D.direction = 270;
-    viewshed3D.pitch = -30;
-    viewshed3D.distance = 100.0;
-    viewshed3D.verticalFov = 40.0;
-    viewshed3D.horizontalFov = 30.0;
-    viewshed3D.visibleAreaColor = Cesium.Color.BLUE.withAlpha(0.2);
-    viewshed3D.invisibleAreaColor = Cesium.Color.RED.withAlpha(0.2);
-    viewshed3D.viewPosition = [114.4404783231725, 30.44292330894362, 42.03265891285062];
+    /////// 方法一 ================手动设置各项参数
+    viewshed3D.direction = 270; // 视点相对于正北方向的朝向
+    viewshed3D.pitch = -30; // 视点所在的俯角
+    viewshed3D.distance = 100.0; // 观察距离
+    viewshed3D.verticalFov = 40.0; // 垂直方向的视野角度
+    viewshed3D.horizontalFov = 30.0; // 垂直方向的视野角度
+    viewshed3D.visibleAreaColor = Cesium.Color.BLUE.withAlpha(0.2); // 可见部分颜色
+    viewshed3D.invisibleAreaColor = Cesium.Color.RED.withAlpha(0.2); // 不可见部分颜色
+    viewshed3D.viewPosition = [114.4404783231725, 30.44292330894362, 42.03265891285062]; // 视野观察点[经度、纬度、高度]
+
+    /////// 方法二  ==============通过目标观察点自动设置可视域分析对象的距离及方向
+    // viewshed3D.setDistDirByPoint([114.43996680120112, 30.44317088100413, 10]);
 
     viewshed3D.build();
-
-    //通过该点设置可视域分析对象的距离及方向
-    // viewshed3D.setDistDirByPoint([114.43996680120112, 30.44317088100413, 10]);
 }
 
 function changeDirection() {
