@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>天际线分析</title>
+    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="../libs/supermap/pretty.css">
+    <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <!--<script type="text/javascript" src="https://cdn.bootcss.com/echarts/3.8.5/echarts.min.js"></script>-->
+    <script src="../libs/js/echarts.js"></script>
+    <script type="text/javascript" src="../libs/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        .cesium-viewer-bottom {
+            display: none;
+        }
+    </style>
+    <script src="天际线分析.js"></script>
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" style="position : absolute;left : 10px;; top : 10px;">
+    <button type="button" id="chooseView" class="button black">提取天际线</button>
+    <button type="button" id="getSkyline2D" class="button black">二维天际线</button>
+    <button type="button" id="setLimitBody" class="button black">绘制限高体</button>
+    <button type="button" id="getSkylineArea" class="button black">拉伸闭合体</button>
+    <button type="button" id="clear" class="button black">清除</button>
+    <button type="button" id="show" class="button black">显示闭合体</button>
+</div>
+<div id="map" style="position : absolute;right : 5%; bottom : 5%;width:450px;height:400px;"></div>
+</body>
+
+</html>
