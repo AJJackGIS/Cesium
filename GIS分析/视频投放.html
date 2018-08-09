@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>视频投放</title>
+    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="../libs/supermap/pretty.css">
+    <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../libs/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+        .cesium-viewer-bottom{
+            display: none;
+        }
+    </style>
+    <script src="视频投放.js"></script>
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div style="position: absolute; left: 10px; top: 10px">
+    <button onclick="start()" class="cesium-button">开始</button>
+</div>
+<video id="trailer" style="display:none" autoplay loop crossorigin controls>
+    <source src="视频投放.mp4" type="video/mp4">
+</video>
+<div style="position: absolute; right: 10px; top: 10px; color: white">
+    <div>
+        <label>方向(度)</label>
+        <input type="range" id="direction" min="0" max="360" step="1.0" value="270" title="方向" oninput="changeDirection()">
+        <input type="text" size="5" value="270">
+    </div>
+
+    <div>
+        <label>翻转(度)</label>
+        <input type="range" id="pitch" min="-90" max="90" step="1.0" value="-30" title="翻转" oninput="changePitch()">
+        <input type="text" size="5" value="-30">
+    </div>
+
+    <div>
+        <label>距离(米)</label>
+        <input type="range" id="distance" min="1" max="500" step="1.0" value="100" title="距离" oninput="changeDistance()">
+        <input type="text" size="5" value="100">
+    </div>
+
+    <div>
+        <label>水平视场角(度)</label>
+        <input type="range" id="horizonalFov" min="1" max="120" step="1" value="30" title="水平视场角"
+               oninput="changeHorizonalFov()">
+        <input type="text" size="5" value="30">
+    </div>
+
+    <div>
+        <label>垂直视场角(度)</label>
+        <input type="range" id="verticalFov" min="1" max="90" step="1.0" value="40" title="垂直视场角"
+               oninput="changeVerticalFov()">
+        <input type="text" size="5" value="40">
+    </div>
+</div>
+</body>
+
+</html>
