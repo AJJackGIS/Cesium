@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>叠加分析</title>
+    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="../libs/supermap/pretty.css">
+    <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../libs/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="../libs/supermap/Convert.js"></script>
+    <script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        .cesium-viewer-bottom {
+            display: none;
+        }
+
+        #toolbar {
+            margin: 5px;
+            position: absolute;
+            left: 0px;
+            top: 0px;
+            padding: 4px;
+            border-radius: 4px;
+        }
+    </style>
+    <script src="叠加分析.js"></script>
+
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div style="position: absolute;left: 15px;top: 15px;">
+    <button type="button" id="source" class="button black">绘制源对象</button>
+    <button type="button" id="target" class="button black">绘制目标对象</button>
+</div>
+<div style="position: absolute;left: 15px;top: 60px;">
+    <select id="overlayAnalyze" class="cesium-button">
+        <option disabled selected value>--选择分析方法--</option>
+        <option value="union">UNION</option>
+        <option value="intersect">INTERSECT</option>
+        <option value="clip">CLIP</option>
+        <option value="erase">ERASE</option>
+    </select>
+</div>
+<div style="position: absolute;left: 15px;top: 105px;">
+    <button type="button" id="overlay" class="button black">叠加分析</button>
+    <button type="button" id="clear" class="button black">清除</button>
+</div>
+</body>
+
+</html>
