@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <title>后处理效果</title>
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+    <link rel="stylesheet" href="../libs/Cesium08/Widgets/widgets.css">
+    <script src="../libs/Cesium08/Cesium.js"></script>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div style="position: absolute; left: 10px; top: 10px;">
+    <button class="cesium-button" onclick="openColorCorrection()">开启颜色校正</button>
+    <button class="cesium-button" onclick="closeColorCorrection()">关闭颜色校正</button>
+    &nbsp;&nbsp;
+    <button class="cesium-button" onclick="openBloom()">开启泛光</button>
+    <button class="cesium-button" onclick="closeBloom()">关闭泛光</button>
+    &nbsp;&nbsp;
+    <button class="cesium-button" onclick="flashPolyLine()">居中闪现</button>
+    &nbsp;&nbsp;
+    <button class="cesium-button" onclick="openScan()">开启扫描</button>
+    <button class="cesium-button" onclick="closeScan()">关闭扫描</button>
+    &nbsp;&nbsp;
+    <button class="cesium-button" onclick="flyCircle()">绕点旋转</button>
+    <button class="cesium-button" onclick="closeCircle()">关闭旋转</button>
+    &nbsp;&nbsp;
+    <button class="cesium-button" onclick="dynamicLine()">动态线</button>
+</div>
+<script src="特效.js"></script>
+</body>
