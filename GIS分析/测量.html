@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>测量</title>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        .pointCss {
+            cursor: default !important;
+        }
+
+        .cesium-viewer-bottom {
+            display: none;
+        }
+    </style>
+    <link rel="stylesheet" href="../libs/Cesium08/Widgets/widgets.css">
+    <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <script src="../libs/Cesium08/Cesium.js"></script>
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<div id="toolbar" style="position: absolute; top: 20px; left: 20px;">
+    <button type="button" id="distance" class="cesium-button">测距</button>
+    <button type="button" id="area" class="cesium-button">测面</button>
+    <button type="button" id="height" class="cesium-button">测高</button>
+    <button type="button" id="clear" class="cesium-button">清除</button>
+    <div style="width: 120px;">
+        <select id="selOpt" class="cesium-button">
+            <option selected value="1">空间量算</option>
+            <option value="2">贴地量算</option>
+        </select>
+    </div>
+
+</div>
+<script src="测量.js"></script>
+</body>
+
+</html>
