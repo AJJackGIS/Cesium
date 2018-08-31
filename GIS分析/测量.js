@@ -38,187 +38,92 @@ try {
         }
     });
 
+    var clampMode = 0;
+    var handlerDis = null;
+    var handlerArea = null;
+    var handlerHeight = null;
+
+    // 使用API
+    handlerDis = new Cesium.MeasureHandler(viewer, Cesium.MeasureMode.Distance);
+    handlerDis.measureEvt.addEventListener(function (result) {
+        var dis = Number(result.distance);
+        var distance = dis > 1000 ? (dis / 1000).toFixed(2) + 'km' : dis.toFixed(2) + 'm';
+        handlerDis.disLabel.text = '距离:' + distance;
+    });
+    // 监听当前事件以获取处理器的状态
+    // handler.activate()后，事件返回true,当结束后返回false
+    handlerDis.activeEvt.addEventListener(function (isActive) {
+        console.log(isActive);
+        if (isActive) {
+            $(".cesium-viewer").addClass("pointCss");
+        } else {
+            $(".cesium-viewer").removeClass("pointCss");
+        }
+    });
+
+    handlerArea = new Cesium.MeasureHandler(viewer, Cesium.MeasureMode.Area);
+    handlerArea.measureEvt.addEventListener(function (result) {
+        var mj = Number(result.area);
+        var area = mj > 1000000 ? (mj / 1000000).toFixed(2) + 'km²' : mj.toFixed(2) + '㎡';
+        handlerArea.areaLabel.text = '面积:' + area;
+        console.log(result.positions);
+    });
+    handlerArea.activeEvt.addEventListener(function (isActive) {
+        console.log(isActive);
+        if (isActive) {
+            $(".cesium-viewer").addClass("pointCss");
+        } else {
+            $(".cesium-viewer").removeClass("pointCss");
+        }
+    });
+
+    handlerHeight = new Cesium.MeasureHandler(viewer, Cesium.MeasureMode.DVH);
+    handlerHeight.measureEvt.addEventListener(function (result) {
+        var distance = result.distance > 1000 ? (result.distance / 1000).toFixed(2) + 'km' : result.distance + 'm';
+        var vHeight = result.verticalHeight > 1000 ? (result.verticalHeight / 1000).toFixed(2) + 'km' : result.verticalHeight + 'm';
+        var hDistance = result.horizontalDistance > 1000 ? (result.horizontalDistance / 1000).toFixed(2) + 'km' : result.horizontalDistance + 'm';
+        handlerHeight.disLabel.text = '空间距离:' + distance;
+        handlerHeight.vLabel.text = '垂直高度:' + vHeight;
+        handlerHeight.hLabel.text = '水平距离:' + hDistance;
+    });
+    handlerHeight.activeEvt.addEventListener(function (isActive) {
+        console.log(isActive);
+        if (isActive) {
+            $(".cesium-viewer").addClass("pointCss");
+        } else {
+            $(".cesium-viewer").removeClass("pointCss");
+        }
+    });
+
+    $('#selOpt').change(function() {
+        var value = $(this).val();
+        if(value == '1'){
+            clampMode = 0;
+            handlerArea.clampMode = 0;
+            handlerDis.clampMode = 0;
+        }
+        else{
+            clampMode = 1;
+            handlerArea.clampMode = 1;
+            handlerDis.clampMode = 1;
+        }
+    });
+
     // 测距
     $("#distance").on("click", function () {
-
-        // 使用API
-        var handler = new Cesium.MeasureHandler(viewer, Cesium.MeasureMode.Distance);
-        handler.measureEvt.addEventListener(function (result) {
-            // var distance = result.distance;
-            // handler.disLabel.text = distance;
-            // console.log(distance);
-
-            var dis = Number(result.distance);
-            var distance = dis > 1000 ? (dis / 1000).toFixed(2) + 'km' : dis.toFixed(2) + 'm';
-            handler.disLabel.text = '距离:' + distance;
-        });
-        // 监听当前事件以获取处理器的状态
-        // handler.activate()后，事件返回true,当结束后返回false
-        handler.activeEvt.addEventListener(function (isActive) {
-            console.log(isActive);
-            if (isActive) {
-                $(".cesium-viewer").addClass("pointCss");
-            } else {
-                $(".cesium-viewer").removeClass("pointCss");
-            }
-        });
-        handler.activate();
-
-        // 自己实现
-
-        // var positions = []; // 所有坐标集合
-        // var entityCollection = []; // 所有的点entity
-        // var primitiveCollection = []; // 所有的线primitive
-        // var distance = 0;
-        //
-        // // left click
-        // viewer.screenSpaceEventHandler.setInputAction(function (event) {
-        //     var position = viewer.scene.pickPosition(event.position);
-        //     positions.push(position);
-        //     var pointEntity = new Cesium.Entity({
-        //         position: position,
-        //         point: {
-        //             color: new Cesium.Color(1, 0.8980392156862745, 0, 1),
-        //             pixelSize: 4,
-        //             outlineColor: Cesium.Color.WHITE,
-        //             outlineWidth: 1
-        //         }
-        //     });
-        //     entityCollection.push(pointEntity);
-        //     viewer.entities.add(pointEntity);
-        //
-        //     // if more than 2 point , draw polylin
-        //     if (positions.length > 1) {
-        //         viewer.entities.removeById("line");
-        //         viewer.entities.add({
-        //             id: "line",
-        //             polyline: {
-        //                 positions: positions,
-        //                 material: new Cesium.Color(1, 0.8980392156862745, 0, 1),
-        //                 width: 2
-        //             }
-        //         });
-        //     }
-        //
-        // }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-        //
-        // // mouse move
-        // viewer.screenSpaceEventHandler.setInputAction(function (event) {
-        //
-        //     if (positions.length > 0) {
-        //         // active
-        //
-        //         var position = viewer.scene.pickPosition(event.endPosition);
-        //
-        //         // dynamic polyline
-        //         var polylinePrimitive = new Cesium.Primitive({
-        //             geometryInstances: new Cesium.GeometryInstance({
-        //                 geometry: new Cesium.PolylineGeometry({
-        //                     positions: [positions[positions.length - 1], position],
-        //                     width: 2.0,
-        //                     vertexFormat: Cesium.PolylineColorAppearance.VERTEX_FORMAT
-        //                 }),
-        //                 attributes: {
-        //                     color: Cesium.ColorGeometryInstanceAttribute.fromColor(new Cesium.Color(1.0, 0.8980392156862745, 0, 1.0))
-        //                 }
-        //             }),
-        //             appearance: new Cesium.PolylineColorAppearance({
-        //                 translucent: false
-        //             })
-        //         });
-        //         if (primitiveCollection.length > 0) {
-        //             primitiveCollection.pop();
-        //             viewer.scene.primitives.remove(viewer.scene.primitives.get(viewer.scene.primitives.length - 1));
-        //
-        //         }
-        //         primitiveCollection.push(polylinePrimitive);
-        //         viewer.scene.primitives.add(polylinePrimitive);
-        //     }
-        //
-        //
-        // }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
-        //
-        // // right click
-        // viewer.screenSpaceEventHandler.setInputAction(function (event) {
-        //     var position = viewer.scene.pickPosition(event.position);
-        //     positions.push(position);
-        //     var pointEntity = new Cesium.Entity({
-        //         position: position,
-        //         point: {
-        //             color: new Cesium.Color(1, 0.8980392156862745, 0, 1),
-        //             pixelSize: 4,
-        //             outlineColor: Cesium.Color.WHITE,
-        //             outlineWidth: 1
-        //         }
-        //     });
-        //     entityCollection.push(pointEntity);
-        //     viewer.entities.add(pointEntity);
-        //
-        //     viewer.entities.removeById("line");
-        //     viewer.entities.add({
-        //         id: "line",
-        //         polyline: {
-        //             positions: positions,
-        //             material: new Cesium.Color(1, 0.8980392156862745, 0, 1),
-        //             width: 2
-        //         }
-        //     });
-        //
-        //     // sum distance
-        //     for (var i = 0; i < positions.length - 1; i++) {
-        //         distance += Cesium.Cartesian3.distance(positions[i], positions[i + 1]);
-        //     }
-        //
-        //     console.log(distance);
-        //
-        //     // cancel eventHandler
-        //     viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
-        //     viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE);
-        //     viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
-        // }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+        handlerDis.activate();
     });
 
     // 测面
     $("#area").on("click", function () {
-        var handler = new Cesium.MeasureHandler(viewer, Cesium.MeasureMode.Area);
-        handler.measureEvt.addEventListener(function (result) {
-            var mj = Number(result.area);
-            var area = mj > 1000000 ? (mj / 1000000).toFixed(2) + 'km²' : mj.toFixed(2) + '㎡';
-            handler.areaLabel.text = '面积:' + area;
-            console.log(result.positions);
-        });
-        handler.activeEvt.addEventListener(function (isActive) {
-            console.log(isActive);
-            if (isActive) {
-                $(".cesium-viewer").addClass("pointCss");
-            } else {
-                $(".cesium-viewer").removeClass("pointCss");
-            }
-        });
-        handler.activate();
+        handlerArea.activate();
     });
 
     // 测高
     $("#height").on("click", function () {
-        var handler = new Cesium.MeasureHandler(viewer, Cesium.MeasureMode.DVH);
-        handler.measureEvt.addEventListener(function (result) {
-            var distance = result.distance > 1000 ? (result.distance / 1000).toFixed(2) + 'km' : result.distance + 'm';
-            var vHeight = result.verticalHeight > 1000 ? (result.verticalHeight / 1000).toFixed(2) + 'km' : result.verticalHeight + 'm';
-            var hDistance = result.horizontalDistance > 1000 ? (result.horizontalDistance / 1000).toFixed(2) + 'km' : result.horizontalDistance + 'm';
-            handler.disLabel.text = '空间距离:' + distance;
-            handler.vLabel.text = '垂直高度:' + vHeight;
-            handler.hLabel.text = '水平距离:' + hDistance;
-        });
-        handler.activeEvt.addEventListener(function (isActive) {
-            console.log(isActive);
-            if (isActive) {
-                $(".cesium-viewer").addClass("pointCss");
-            } else {
-                $(".cesium-viewer").removeClass("pointCss");
-            }
-        });
-        handler.activate();
-    })
+        handlerHeight.activate();
+    });
+
 }
 catch (e) {
     if (widget._showRenderLoopErrors) {

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>模板页</title>
+    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="../libs/supermap/pretty.css">
+    <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../libs/supermap/SuperMap.Include.js"></script>
+    <script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        .cesium-viewer-bottom {
+            display: none;
+        }
+    </style>
+    <script src="../utils/baiduConverter.js"></script>
+    <script src="../utils/coorTransform.js"></script>
+    <script src="metro.js"></script>
+
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<script>
+    function onload(Cesium) {
+        var viewer = new Cesium.Viewer('cesiumContainer', {
+            imageryProvider: new Cesium.UrlTemplateImageryProvider({
+                url: 'http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
+                // url: 'http://172.29.1.151:8080/osm/{z}/{x}/{y}.png'
+            })
+        });
+        var scene = viewer.scene;
+        $('#loadingbar').remove();
+
+        // 武汉地铁
+        for (var i = 0; i < train.length; i++) {
+            var ps = train[i].split(",");
+            var np = [];
+            for (var j = 0; j < ps.length; j = j + 2) {
+                var p = baiduTransform.Mercator2BD09(parseFloat(ps[j]), parseFloat(ps[j + 1]));
+                p = coordinateTransform.bd09togcj02(p[0], p[1]);
+                p = coordinateTransform.gcj02towgs84(p[0], p[1]);
+                np.push(Cesium.Cartesian3.fromDegrees(p[0], p[1], 0.1));
+            }
+            viewer.entities.add({
+                name: "武汉地铁" + (i + 1) + "号线",
+                polyline: {
+                    positions: np,
+                    width: 5,
+                    material: Cesium.Color.fromCssColorString(color[i])
+                }
+            });
+        }
+
+        for (var i = 0; i < stop.length; i++) {
+            var stations = stop[i];
+            for (var j = 0; j < stations.length; j++){
+                var coordinate = stations[j].geo.split(",");
+                var p = baiduTransform.Mercator2BD09(parseFloat(coordinate[0]), parseFloat(coordinate[1]));
+                p = coordinateTransform.bd09togcj02(p[0], p[1]);
+                p = coordinateTransform.gcj02towgs84(p[0], p[1]);
+
+                viewer.entities.add({
+                    position: Cesium.Cartesian3.fromDegrees(p[0], p[1]),
+                    label: {
+                        text: stations[j].name,
+                        font: '12px Helvetica',
+                        fillColor: Cesium.Color.SKYBLUE,
+                        outlineColor: Cesium.Color.BLACK,
+                        outlineWidth: 2,
+                        showBackground: true,
+                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                        style: Cesium.LabelStyle.FILL_AND_OUTLINE
+                    }
+                });
+            }
+
+        }
+
+        viewer.zoomTo(viewer.entities);
+    }
+</script>
+</body>
+
+</html>

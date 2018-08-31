@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>二分查找</title>
+</head>
+<body>
+<script>
+    function binarySearch(array, itemToFind, comparator) {
+        var low = 0;
+        var high = array.length - 1;
+        var i;
+        var comparison;
+
+        while (low <= high) {
+            // i = ~~((low + high) / 2);
+            i = ((low + high) / 2) >> 0;
+            comparison = comparator(array[i], itemToFind);
+            if (comparison < 0) {
+                low = i + 1;
+                continue;
+            }
+            if (comparison > 0) {
+                high = i - 1;
+                continue;
+            }
+            return i;
+        }
+        return ~(high + 1);
+    }
+
+    function comparator(a, b) {
+        return a - b;
+    }
+
+    var numbers = [0, 2, 4, 6, 8];
+    var index = binarySearch(numbers, 5, comparator); // 3
+    console.log(index);
+</script>
+</body>
+</html>
