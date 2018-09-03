@@ -56,10 +56,21 @@
         .subway-txt {
             padding-left: 5px;
         }
+
+        .subway-state {
+            background: #4995e4;
+            border-radius: 6px;
+            padding-left: 5px;
+            padding-right: 5px;
+            margin-left: 5px;
+            color: white;
+            font-size: 12px;
+        }
     </style>
     <script src="../utils/baiduConverter.js"></script>
     <script src="../utils/coorTransform.js"></script>
     <script src="metro.js"></script>
+    <script src="metro2.js"></script>
 
 </head>
 
@@ -87,22 +98,74 @@
 </div>
 <div class="subway-menu">
     <div class="subway-col">
-        <div class="subway-item" lid="轨道交通1号线"><span class="subway-icon" style="background-color:#0066CC"></span><span
-                class="subway-txt">1号线</span></div>
-        <div class="subway-item" lid="轨道交通2号线"><span class="subway-icon" style="background-color:#ED9CC7"></span><span
-                class="subway-txt">2号线</span></div>
-        <div class="subway-item" lid="轨道交通3号线"><span class="subway-icon" style="background-color:#cc911f"></span><span
-                class="subway-txt">3号线</span></div>
-        <div class="subway-item" lid="轨道交通4号线"><span class="subway-icon" style="background-color:#9CCA0D"></span><span
-                class="subway-txt">4号线</span></div>
-        <div class="subway-item" lid="轨道交通6号线"><span class="subway-icon" style="background-color:#46BC54"></span><span
-                class="subway-txt">6号线</span></div>
-        <div class="subway-item" lid="轨道交通8号线"><span class="subway-icon" style="background-color:#5E8C99"></span><span
-                class="subway-txt">8号线</span></div>
-        <!--<div class="subway-item" lid="轨道交通11号线"><span class="subway-icon" style="background-color:#EAC321"></span><span-->
-        <!--class="subway-txt">11号线</span></div>-->
-        <div class="subway-item" lid="阳逻线"><span class="subway-icon" style="background-color:#BF3CAC"></span><span
-                class="subway-txt">阳逻线</span></div>
+        <div class="subway-item" lid="轨道交通1号线">
+            <span class="subway-icon" style="background-color:#0066CC"></span>
+            <span class="subway-txt">1号线</span>
+        </div>
+        <div class="subway-item" lid="轨道交通2号线">
+            <span class="subway-icon" style="background-color:#ED9CC7"></span>
+            <span class="subway-txt">2号线</span>
+        </div>
+        <div class="subway-item" lid="轨道交通2号线南延线">
+            <span class="subway-icon" style="background-color:#ED9CC7"></span>
+            <span class="subway-txt">2号线南延线</span>
+            <span class="subway-state">建设中</span>
+        </div>
+        <div class="subway-item" lid="轨道交通3号线">
+            <span class="subway-icon" style="background-color:#cc911f"></span>
+            <span class="subway-txt">3号线</span>
+        </div>
+        <div class="subway-item" lid="轨道交通4号线">
+            <span class="subway-icon" style="background-color:#9CCA0D"></span>
+            <span class="subway-txt">4号线</span>
+        </div>
+        <div class="subway-item" lid="轨道交通5号线">
+            <span class="subway-icon" style="background-color:#9CCA0D"></span>
+            <span class="subway-txt">5号线</span>
+            <span class="subway-state">建设中</span>
+        </div>
+        <div class="subway-item" lid="轨道交通6号线">
+            <span class="subway-icon" style="background-color:#46BC54"></span>
+            <span class="subway-txt">6号线</span>
+        </div>
+        <div class="subway-item" lid="轨道交通7号线">
+            <span class="subway-icon" style="background-color:#46BC54"></span>
+            <span class="subway-txt">7号线</span>
+            <span class="subway-state">建设中</span>
+        </div>
+        <div class="subway-item" lid="轨道交通8号线(一期)">
+            <span class="subway-icon" style="background-color:#5E8C99"></span>
+            <span class="subway-txt">8号线(一期)</span>
+        </div>
+        <div class="subway-item" lid="轨道交通8号线(二期)">
+            <span class="subway-icon" style="background-color:#5E8C99"></span>
+            <span class="subway-txt">8号线(二期)</span>
+            <span class="subway-state">建设中</span>
+        </div>
+        <div class="subway-item" lid="轨道交通11号线东段一期">
+            <span class="subway-icon" style="background-color:#EAC321"></span>
+            <span class="subway-txt">11号线(一期)</span>
+            <span class="subway-state">建设中</span>
+        </div>
+        <div class="subway-item" lid="轨道交通11号线东段二期">
+            <span class="subway-icon" style="background-color:#EAC321"></span>
+            <span class="subway-txt">11号线(二期)</span>
+            <span class="subway-state">建设中</span>
+        </div>
+        <div class="subway-item" lid="阳逻线">
+            <span class="subway-icon" style="background-color:#BF3CAC"></span>
+            <span class="subway-txt">阳逻线</span>
+        </div>
+        <div class="subway-item" lid="纸坊线">
+            <span class="subway-icon" style="background-color:#BF3CAC"></span>
+            <span class="subway-txt">纸坊线</span>
+            <span class="subway-state">建设中</span>
+        </div>
+        <div class="subway-item" lid="蔡甸线">
+            <span class="subway-icon" style="background-color:#BF3CAC"></span>
+            <span class="subway-txt">蔡甸线</span>
+            <span class="subway-state">建设中</span>
+        </div>
     </div>
 </div>
 <script>
@@ -112,7 +175,7 @@
         viewer = new Cesium.Viewer('cesiumContainer', {
             imageryProvider: new Cesium.UrlTemplateImageryProvider({
                 url: 'http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
-                // url: 'http://172.29.1.151:8080/osm/{z}/{x}/{y}.png'
+                // url: 'http://172.29.1.151:8080/osm/{z}/{x}/{y}.png',
             })
         });
         var scene = viewer.scene;
@@ -134,7 +197,7 @@
             entities[0].polyline.width = 5;
         });
 
-        // 武汉地铁
+        // 武汉地铁 === 正在运营中
         for (var i = 0; i < train.length; i++) {
             var ps = train[i].split(",");
             var np = [];
@@ -180,6 +243,51 @@
             }
 
         }
+
+        // 建设中
+        for (var i = 0; i < lines_temp.length; i++) {
+            var ps = lines_temp[i].split(",");
+            var np = [];
+            for (var j = 0, l = ps.length / 2; j < l; j++) {
+                var p = coordinateTransform.gcj02towgs84(ps[j], ps[j + l]);
+                np.push(Cesium.Cartesian3.fromDegrees(p[0], p[1], 0.1));
+            }
+            viewer.entities.add({
+                name: "武汉" + names_temp[i],
+                polyline: {
+                    positions: np,
+                    width: 5,
+                    material: new Cesium.PolylineDashMaterialProperty({
+                        color: Cesium.Color.fromCssColorString("#cccccc")
+                    })
+                }
+            });
+        }
+
+        for (var i = 0; i < stops_temp.length; i++) {
+            var stations = stops_temp[i];
+            for (var j = 0; j < stations.length; j++) {
+                var coordinate = stations[j].xy_coords.split(";");
+                var p = coordinateTransform.gcj02towgs84(parseFloat(coordinate[0]), parseFloat(coordinate[1]));
+                viewer.entities.add({
+                    position: Cesium.Cartesian3.fromDegrees(p[0], p[1]),
+                    label: {
+                        text: stations[j].name,
+                        font: '12px Helvetica',
+                        fillColor: Cesium.Color.SKYBLUE,
+                        outlineColor: Cesium.Color.BLACK,
+                        outlineWidth: 2,
+                        showBackground: true,
+                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                        scaleByDistance: new Cesium.NearFarScalar(0, 2, 20000, 0.5),
+                        translucencyByDistance: new Cesium.NearFarScalar(20000, 1, 50000, 0)
+                    }
+                });
+            }
+
+        }
+
 
         viewer.zoomTo(viewer.entities);
     }
