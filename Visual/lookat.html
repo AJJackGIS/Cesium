@@ -32,33 +32,40 @@
     viewer._timeline.container.style.display = "none";
     viewer._cesiumWidget._creditContainer.style.display = "none";
 
-    viewer.entities.add({
-        name: "围绕着一个点旋转",
-        position: Cesium.Cartesian3.fromDegrees(114.438304, 30.445981),
-        model: {
-            uri: 'Cesium_Air.gltf',
-            minimumPixelSize: 64
-        }
-    });
+    // viewer.entities.add({
+    //     name: "围绕着一个点旋转",
+    //     position: Cesium.Cartesian3.fromDegrees(114.438304, 30.445981),
+    //     model: {
+    //         uri: 'Cesium_Air.gltf',
+    //         minimumPixelSize: 64
+    //     }
+    // });
 
-    var transform = Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.fromDegrees(114.438304, 30.445981));
+    // var transform = Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.fromDegrees(114.438304, 30.445981));
+    // var heading = Cesium.Math.toRadians(0.0);
+    // var pitch = Cesium.Math.toRadians(-90.0);
+    // var range = 100000000.0;
+
+    var transform = Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.UNIT_Z);
     var heading = Cesium.Math.toRadians(0.0);
-    var pitch = Cesium.Math.toRadians(-20.0);
-    var range = 100.0;
+    var pitch = Cesium.Math.toRadians(0.0);
+    var range = 30000000.0;
+
     viewer.camera.lookAtTransform(transform, new Cesium.HeadingPitchRange(heading, pitch, range));
 
     // 设置时间
-    var start = Cesium.JulianDate.fromDate(new Date(2018, 6, 5, 8));
-    var stop = Cesium.JulianDate.addSeconds(start, 360, new Cesium.JulianDate()); // 设置总时长360秒
-
-    viewer.clock.startTime = start.clone();
-    viewer.clock.stopTime = stop.clone();
-    viewer.clock.currentTime = start.clone();
-    viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
+    // var start = Cesium.JulianDate.fromDate(new Date(2018, 6, 5, 8));
+    // var stop = Cesium.JulianDate.addSeconds(start, 360, new Cesium.JulianDate()); // 设置总时长360秒
+    //
+    // viewer.clock.startTime = start.clone();
+    // viewer.clock.stopTime = stop.clone();
+    // viewer.clock.currentTime = start.clone();
+    // viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
     viewer.clock.multiplier = 10; // 10倍速率播放
 
-    viewer.timeline.zoomTo(start, stop);
+    // viewer.timeline.zoomTo(start, stop);
 
+    var start = new Cesium.JulianDate();
     viewer.scene.preRender.addEventListener(function (scene, time) {
         var diff = Cesium.JulianDate.secondsDifference(time, start); // 秒
         viewer.camera.lookAtTransform(transform, new Cesium.HeadingPitchRange(Cesium.Math.toRadians(diff), pitch, range));
