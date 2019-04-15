@@ -106,11 +106,6 @@
             <span class="subway-icon" style="background-color:#ED9CC7"></span>
             <span class="subway-txt">2号线</span>
         </div>
-        <div class="subway-item" lid="轨道交通2号线南延线">
-            <span class="subway-icon" style="background-color:#ED9CC7"></span>
-            <span class="subway-txt">2号线南延线</span>
-            <span class="subway-state">建设中</span>
-        </div>
         <div class="subway-item" lid="轨道交通3号线">
             <span class="subway-icon" style="background-color:#cc911f"></span>
             <span class="subway-txt">3号线</span>
@@ -129,9 +124,8 @@
             <span class="subway-txt">6号线</span>
         </div>
         <div class="subway-item" lid="轨道交通7号线">
-            <span class="subway-icon" style="background-color:#46BC54"></span>
+            <span class="subway-icon" style="background-color:#dc8d43"></span>
             <span class="subway-txt">7号线</span>
-            <span class="subway-state">建设中</span>
         </div>
         <div class="subway-item" lid="轨道交通8号线(一期)">
             <span class="subway-icon" style="background-color:#5E8C99"></span>
@@ -142,27 +136,20 @@
             <span class="subway-txt">8号线(二期)</span>
             <span class="subway-state">建设中</span>
         </div>
-        <div class="subway-item" lid="轨道交通11号线东段一期">
+        <div class="subway-item" lid="轨道交通11号线">
             <span class="subway-icon" style="background-color:#EAC321"></span>
-            <span class="subway-txt">11号线(一期)</span>
-            <span class="subway-state">建设中</span>
+            <span class="subway-txt">11号线</span>
         </div>
         <div class="subway-item" lid="轨道交通11号线东段二期">
             <span class="subway-icon" style="background-color:#EAC321"></span>
             <span class="subway-txt">11号线(二期)</span>
-            <span class="subway-state">建设中</span>
         </div>
         <div class="subway-item" lid="阳逻线">
             <span class="subway-icon" style="background-color:#BF3CAC"></span>
             <span class="subway-txt">阳逻线</span>
         </div>
-        <div class="subway-item" lid="纸坊线">
-            <span class="subway-icon" style="background-color:#BF3CAC"></span>
-            <span class="subway-txt">纸坊线</span>
-            <span class="subway-state">建设中</span>
-        </div>
         <div class="subway-item" lid="蔡甸线">
-            <span class="subway-icon" style="background-color:#BF3CAC"></span>
+            <span class="subway-icon" style="background-color:#9CCA0D"></span>
             <span class="subway-txt">蔡甸线</span>
             <span class="subway-state">建设中</span>
         </div>
@@ -201,10 +188,12 @@
         for (var i = 0; i < train.length; i++) {
             var ps = train[i].split(",");
             var np = [];
+            var coor = [];
             for (var j = 0; j < ps.length; j = j + 2) {
                 var p = baiduTransform.Mercator2BD09(parseFloat(ps[j]), parseFloat(ps[j + 1]));
                 p = coordinateTransform.bd09togcj02(p[0], p[1]);
                 p = coordinateTransform.gcj02towgs84(p[0], p[1]);
+                coor.push(p[0], p[1]);
                 np.push(Cesium.Cartesian3.fromDegrees(p[0], p[1], 0.1));
             }
             viewer.entities.add({
@@ -215,6 +204,7 @@
                     material: Cesium.Color.fromCssColorString(lineColor[i])
                 }
             });
+            // console.log("name:" + "武汉" + lineName[i] + ",color:" + lineColor[i] + ",path:" + coor.concat(','));
         }
 
         for (var i = 0; i < lineStop.length; i++) {
@@ -224,7 +214,7 @@
                 var p = baiduTransform.Mercator2BD09(parseFloat(coordinate[0]), parseFloat(coordinate[1]));
                 p = coordinateTransform.bd09togcj02(p[0], p[1]);
                 p = coordinateTransform.gcj02towgs84(p[0], p[1]);
-
+                console.log("name:" + (i+1) + ";" + stations[j].name + ";" + p[0] + "," + p[1]);
                 viewer.entities.add({
                     position: Cesium.Cartesian3.fromDegrees(p[0], p[1]),
                     label: {

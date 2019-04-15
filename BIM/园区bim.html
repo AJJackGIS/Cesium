@@ -20,7 +20,8 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #000000;
+            /*background-color: #000000;*/
+            background-image: url("timg.jpg");
         }
 
         .cesium-viewer-bottom {
@@ -34,12 +35,14 @@
             background-color: #0303037d;
             color: white;
         }
-        .layers ul{
+
+        .layers ul {
             list-style: none;
             margin: 0px;
             padding: 0px 0px 10px 20px;
         }
-        .layers li{
+
+        .layers li {
             margin: 0px;
             padding: 2px 5px 2px 20px;
         }
@@ -99,7 +102,18 @@
     var scene = null;
 
     function onload(Cesium) {
-        viewer = new Cesium.Viewer('cesiumContainer');
+        viewer = new Cesium.Viewer('cesiumContainer', {
+            skyBox: new Cesium.SkyBox({
+                sources: {
+                    positiveX: '../libs/Cesium/Assets/Textures/SkyBox/posx.jpg',
+                    negativeX: '../libs/Cesium/Assets/Textures/SkyBox/negx.jpg',
+                    positiveY: '../libs/Cesium/Assets/Textures/SkyBox/negy.jpg',
+                    negativeY: '../libs/Cesium/Assets/Textures/SkyBox/posy.jpg',
+                    positiveZ: '../libs/Cesium/Assets/Textures/SkyBox/posz.jpg',
+                    negativeZ: '../libs/Cesium/Assets/Textures/SkyBox/negz.jpg'
+                }
+            })
+        });
         scene = viewer.scene;
         scene.globe.baseColor = new Cesium.Color(0.0, 0.0, 0.0, 1.0); // 没有影像时地球的基础颜色，默认为蓝色
         scene.globe.show = false; // 是否显示地球
@@ -317,7 +331,7 @@
                 orientation: {
                     heading: 4.695710252393422,
                     pitch: -0.4789857731977838,
-                    roll: 6.283185307104354
+                    roll: 0
                 }
             });
         });
@@ -339,11 +353,11 @@
 
     function toggle(name) {
         var layer = scene.layers.find(name);
-        if (Cesium.defined(layer)){
+        if (Cesium.defined(layer)) {
             layer.visible = !layer.visible;
         }
     }
-</script>
+    </script>
 </body>
 
 </html>
