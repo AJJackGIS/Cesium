@@ -6,9 +6,10 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
     <title>综合应用</title>
-    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">
+    <script src="../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>
     <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
-    <script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>
+    <!--<script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>-->
     <style>
         html,
         body,
@@ -21,9 +22,9 @@
             background-color: #000000;
         }
 
-        .cesium-viewer-bottom {
-            display: none;
-        }
+        /*.cesium-viewer-bottom {*/
+        /*display: none;*/
+        /*}*/
 
         .controlPanel {
             position: absolute;
@@ -35,31 +36,12 @@
             font-size: 14px;
         }
     </style>
+    <script src="CesiumMeasure.min.js"></script>
+
 </head>
 
 <body>
 <div id="cesiumContainer"></div>
-<div id='loadingbar' class="spinner">
-    <div class="spinner-container container1">
-        <div class="circle1"></div>
-        <div class="circle2"></div>
-        <div class="circle3"></div>
-        <div class="circle4"></div>
-    </div>
-    <div class="spinner-container container2">
-        <div class="circle1"></div>
-        <div class="circle2"></div>
-        <div class="circle3"></div>
-        <div class="circle4"></div>
-    </div>
-    <div class="spinner-container container3">
-        <div class="circle1"></div>
-        <div class="circle2"></div>
-        <div class="circle3"></div>
-        <div class="circle4"></div>
-    </div>
-</div>
-
 <!--底图切换-->
 <div class="controlPanel">
     底图切换：
@@ -73,25 +55,66 @@
     <input type="radio" name="radio_imagery" class="cesium-button" onchange="changeImagery(8)">ESRI地图</input>
     <input type="radio" name="radio_imagery" class="cesium-button" onchange="changeImagery(9)">ESRI影像</input>
 
-    <br>
+    <br> <br>
 
     地形：
-    <input type="radio" name="radio_terrain" class="cesium-button" onchange="changeImagery(1)">谷歌地图</input>
+    <input type="checkbox" class="cesium-button" onchange="showTerrain(this)">开启地形</input>
+
+    <br> <br>
+
+    量测：
+    <input class="draw" type="radio" name="draw" value="0" checked="checked" onchange="changeMeasureType(true)">贴地形
+    <input class="draw" type="radio" name="draw" value="1" onchange="changeMeasureType(false)">空间
+    <button class="cesium-button" id="point">画点</button>
+    <button class="cesium-button" id="line">画线</button>
+    <button class="cesium-button" id="polygon">画面</button>
+    <button class="cesium-button" id="elevation">量高</button>
+    <button class="cesium-button" id="remove">移除</button>
 </div>
 
 <script>
-    var viewer;
 
-    function onload(Cesium) {
-        viewer = new Cesium.Viewer('cesiumContainer', {
-            // 底图
-            imageryProvider: new Cesium.UrlTemplateImageryProvider({
-                url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
-            })
-        });
-        var scene = viewer.scene;
-        $('#loadingbar').remove();
-    }
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwMDVjODczYy1kMzkxLTQ1OGUtYjAwOS01MDRlN2QzOTExYTgiLCJpZCI6NTM3Mywic2NvcGVzIjpbImFzciIsImdjIl0sImlhdCI6MTU0MzE5NzM1NH0.RqX0BJWiIngpnINQpX5S7-4Gb16v85X2PPl6DfnGvCw';
+
+    // homebutton默认跳转位置
+    Cesium.Camera.DEFAULT_VIEW_RECTANGLE = Cesium.Rectangle.fromDegrees(89.5, 20.4, 110.4, 61.2);
+
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+        selectionIndicator: false,
+        baseLayerPicker: false,
+        vrButton: false,
+        geocoder: false,
+        sceneModePicker: false,
+        // infoBox: false,
+        navigationHelpButton: false,
+        // 底图
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        })
+    });
+    viewer.homeButton.viewModel.tooltip = '返回初始视角';
+
+    // 默认home位置
+
+    // 有Cesium3DTileset的情况下
+    // var tileset_url = "";
+    // var tileset = new Cesium.Cesium3DTileset({
+    //     url: tileset_url
+    // });
+    // tileset.readyPromise.then(function (tileset) {
+    //     viewer.scene.primitives.add(tileset);
+    //     var default_HeadingPitchRange = new Cesium.HeadingPitchRange(0.0, -0.5, tileset.boundingSphere.radius * 2.0);
+    //     viewer.zoomTo(tileset, default_HeadingPitchRange);
+    //     // overwrite homebutton
+    //     viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function (e) {
+    //         e.cancel = true;
+    //         viewer.zoomTo(tileset, default_HeadingPitchRange);
+    //     });
+    // }).otherwise(function (error) {
+    //     console.log(error);
+    // });
+
+    var scene = viewer.scene;
 
     // 底图切换
     function changeImagery(code) {
@@ -193,11 +216,107 @@
 
     }
 
+    // 地形
+    viewer.scene.globe.depthTestAgainstTerrain = true;
+    var defaultTerrainProvider = viewer.terrainProvider;
+
+    function showTerrain(obj) {
+        if (obj.checked) {
+            viewer.terrainProvider = new Cesium.CesiumTerrainProvider({
+                url: Cesium.IonResource.fromAssetId(1),
+                //请求照明
+                requestVertexNormals: true,
+                //请求水波纹效果
+                requestWaterMask: true
+            });
+        } else {
+            viewer.terrainProvider = defaultTerrainProvider;
+        }
+
+    }
+
     // 测量工具
+    const tool = new Cesium.DrawTool({
+        viewer: viewer,
+        isMeasure: true,  // 是否开启测量模式
+        isClampGround: true,  // 是否开启贴地模式
+        lineWidth: 1.0    // 设置线宽
+    });
+
+    function changeMeasureType(type) {
+        tool.setIsClampGround(type)  // 设置是否开启贴地模式
+    }
+
+    document.getElementById('point').onclick = function () {
+        tool.startPoint()  // 画点
+    };
+    document.getElementById('line').onclick = function () {
+        tool.startPolyline()  // 画线
+    };
+    document.getElementById('polygon').onclick = function () {
+        tool.startPolygon();  // 画面
+    };
+    document.getElementById('elevation').onclick = function () {
+        tool.startElevation();  // 量高
+    };
+    document.getElementById('remove').onclick = function () {
+        tool.destory()
+    };
 
     // 倾斜数据
+    var tileSet = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
+        url: 'http://localhost:90/b3dm/tileset.json'
+    }));
+    viewer.scene.primitives.add(tileSet);
+
+    tileSet.readyPromise.then(function (tileset) {
+        viewer.scene.primitives.add(tileset);
+        var default_HeadingPitchRange = new Cesium.HeadingPitchRange(0.0, -0.5, tileset.boundingSphere.radius * 2.0);
+        viewer.zoomTo(tileset, default_HeadingPitchRange);
+        // overwrite homebutton
+        viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function (e) {
+            e.cancel = true;
+            viewer.zoomTo(tileset, default_HeadingPitchRange);
+        });
+    }).otherwise(function (error) {
+        console.log(error);
+    });
+
 
     // 单体化查询
+
+    // 存储点击选中的feature
+    var selectFeature = undefined;
+
+    // 注册屏幕空间事件
+    viewer.screenSpaceEventHandler.setInputAction(function (clickEvent) {
+        var feature = viewer.scene.pick(clickEvent.position); // When a feature of a 3D Tiles tileset is picked, pick returns a Cesium3DTileFeature object.
+        if (Cesium.defined(feature) && feature instanceof Cesium.Cesium3DTileFeature) {
+            // 显示该feature
+            feature.color = Cesium.Color.LIME; // 更改feature的颜色
+
+            // 重置之前的选中的要素
+            if (Cesium.defined(selectFeature)) {
+                selectFeature.color = new Cesium.Color();
+            }
+            // 更新选中的feature
+            selectFeature = feature;
+
+            // 获取该feature的属性信息
+            var propertyNames = feature.getPropertyNames(); // 得到所有的属性名称
+            var length = propertyNames.length;
+            var propertyHtml = "";
+            for (var i = 0; i < length; ++i) {
+                var propertyName = propertyNames[i];
+                propertyHtml += "<tr><td>" + propertyName + "</td><td>" + feature.getProperty(propertyName) + "</td></tr>";
+            }
+            // 显示属性面板(infoBox = true)
+            var selelctEntity = new Cesium.Entity();
+            selelctEntity.name = feature.getProperty("name");
+            selelctEntity.description = "<table class='cesium-infoBox-defaultTable'><tbody> " + propertyHtml + " </tbody></table>";
+            viewer.selectedEntity = selelctEntity; // 这个的地方的selectedEntity的属性跟模型显示无关，只是对view的infoBox属性设置为true有关，出现选中的列表而已
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK); // 左击
 
     // 摄像头
 
