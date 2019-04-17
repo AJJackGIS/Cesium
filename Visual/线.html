@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>线性</title>
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+    <link rel="stylesheet" href="../libs/Cesium08/Widgets/widgets.css">
+    <script src="../libs/Cesium08/Cesium.js"></script>
+
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<script>
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        })
+    });
+    var scene = viewer.scene;
+
+    var startLon = -10;
+    var endLon = 90;
+    var lat = 0;
+
+    // PolylineGlowMaterialProperty
+    viewer.entities.add({
+        name: '发光材质',
+        polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArrayHeights([startLon, lat, 1000, endLon, lat, 1000]),
+            width: 10,
+            material: new Cesium.PolylineGlowMaterialProperty({
+                glowPower: 0.5,
+                color: Cesium.Color.RED
+            })
+        }
+    });
+
+    // PolylineArrowMaterialProperty
+    viewer.entities.add({
+        name: '箭头材质',
+        polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArrayHeights([-75, 43, 1000, -125, 43, 1000]),
+            width: 10,
+            material: new Cesium.PolylineArrowMaterialProperty(Cesium.Color.PURPLE)
+        }
+    });
+
+    // PolylineDashMaterialProperty
+    viewer.entities.add({
+        name: '破折线',
+        polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArrayHeights([-75, 45, 500000, -125, 45, 500000]),
+            width: 4,
+            material: new Cesium.PolylineDashMaterialProperty({
+                color: Cesium.Color.CYAN
+            })
+        }
+    });
+
+    // PolylineDynamicMaterialProperty
+    viewer.entities.add({
+        name: '动态线',
+        polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArray([0, 45, 125, 45]),
+            width: 10,
+            hMax: 500000,
+            material: new Cesium.PolylineDynamicMaterialProperty({
+                color: Cesium.Color.RED,
+                outlineWidth: 2,
+                outlineColor: Cesium.Color.YELLOW
+            })
+        }
+    });
+
+    // PolylineOutlineMaterialProperty
+    viewer.entities.add({
+        name: '外边线',
+        polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArray([0, 60, 125, 60]),
+            width: 10,
+            hMax: 500000,
+            material: new Cesium.PolylineOutlineMaterialProperty({
+                color: Cesium.Color.RED,
+                outlineWidth: 2,
+                outlineColor: Cesium.Color.YELLOW
+            })
+        }
+    });
+
+    // PolylineTrailMaterialProperty
+    viewer.entities.add({
+        name: '尾迹线',
+        polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArray([0, 20, 125, 20]),
+            width: 5,
+            hMax: 500000,
+            material: new Cesium.PolylineTrailMaterialProperty({
+                color: Cesium.Color.RED,
+                outlineWidth: 0,
+                outlineColor: Cesium.Color.YELLOW,
+                period: 10,
+                trailLength: 0.2
+            })
+        }
+    });
+    viewer.entities.add({
+        name: '尾迹线',
+        polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArray([0, 20, 125, 20]),
+            width: 1,
+            hMax: 500000,
+            material: Cesium.Color.RED
+        }
+    });
+</script>
+</body>
+
+</html>

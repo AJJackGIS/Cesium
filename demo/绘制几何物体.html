@@ -101,15 +101,16 @@
             //     -102.0, 35.0]), // 统一高度
             // extrudedHeight: 500000.0, // 拉伸高度
 
-            hierarchy: Cesium.Cartesian3.fromDegreesArrayHeights([-108.0, 25.0, 100000,
-                -100.0, 25.0, 100000,
-                -100.0, 30.0, 100000,
-                -108.0, 30.0, 300000]), // 自定义高度
+            hierarchy: Cesium.Cartesian3.fromDegreesArrayHeights([-108.0, 25.0, 10,
+                -108.1, 25.0, 10,
+                -108.1, 30.0, 10,
+                -107.9, 28.0, 10,
+                -108, 25.0, 10]), // 自定义高度
 
             extrudedHeight: 0, // 拉伸高度
             perPositionHeight: true,
-            closeTop: false, // 多面体顶部是否封闭
-            closeBottom: false, // 多面体底部是否封闭
+            closeTop: true, // 多面体顶部是否封闭
+            closeBottom: true, // 多面体底部是否封闭
             material: Cesium.Color.RED
         }
     });
@@ -158,11 +159,11 @@
     viewer.entities.add({
         name: 'Red line on the surface',
         polyline: {
-            positions: Cesium.Cartesian3.fromDegreesArray([-75, 35,
-                -125, 35]),
-            width: 5,
+            // positions: Cesium.Cartesian3.fromDegreesArray([-75, 35, -125, 35]),
+            positions: Cesium.Cartesian3.fromDegreesArrayHeights([-75, 35, 10000000, -125, 35, 10000000]),
+            width: 10,
 
-            material: Cesium.Color.RED // 普通样式
+            // material: Cesium.Color.RED // 普通样式
 
             // material : new Cesium.PolylineGlowMaterialProperty({
             //     glowPower : 0.2, // 发光的宽度 为 线的 倍数
@@ -178,12 +179,12 @@
             // material: new Cesium.PolylineArrowMaterialProperty(Cesium.Color.PURPLE), // 带箭头
             // followSurface: true //指定是直线还是弧线==浮在表面
 
-            // material : new Cesium.PolylineDashMaterialProperty({
-            //     color: Cesium.Color.CYAN, // 线颜色
-            //     gapColor:Cesium.Color.RED, // 分段颜色==默认透明
-            //     dashLength:60 // 分段线的长度 16px
-            //
-            // }) // 分段线
+            material : new Cesium.PolylineDashMaterialProperty({
+                color: Cesium.Color.CYAN, // 线颜色
+                gapColor:Cesium.Color.RED, // 分段颜色==默认透明
+                dashLength:60 // 分段线的长度 16px
+
+            }) // 分段线
         }
     });
 
@@ -252,16 +253,16 @@
 
     // 矩形 entity.rectangle
     viewer.entities.add({
-        name: 'Red translucent rectangle',
-        rectangle: {
-            coordinates: Cesium.Rectangle.fromDegrees(-110.0, 20.0, -80.0, 25.0),
-            material: Cesium.Color.RED.withAlpha(0.5),
-            rotation: Cesium.Math.toRadians(45), // 旋转
-            extrudedHeight: 300000.0, // 拉伸
-            height: 100000.0, // 高度
-            outline: true,
-            outlineColor: Cesium.Color.BLACK
-        }
+      name: 'Red translucent rectangle',
+      rectangle: {
+        coordinates: Cesium.Rectangle.fromDegrees(-110.0, 20.0, -80.0, 25.0),
+        material: Cesium.Color.RED.withAlpha(0.5),
+        rotation: Cesium.Math.toRadians(45), // 旋转
+        extrudedHeight: 300000.0, // 拉伸
+        height: 100000.0, // 高度
+        outline: true,
+        outlineColor: Cesium.Color.BLACK
+      }
     });
 
     // 球体和椭球体 entity.ellipsoid

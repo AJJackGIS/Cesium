@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>综合应用</title>
+    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        .cesium-viewer-bottom {
+            display: none;
+        }
+
+        .controlPanel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: dimgrey;
+            color: white;
+            padding: 16px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+
+<!--底图切换-->
+<div class="controlPanel">
+    底图切换：
+    <input type="radio" name="radio_imagery" class="cesium-button" onchange="changeImagery(1)">谷歌地图</input>
+    <input type="radio" name="radio_imagery" class="cesium-button" onchange="changeImagery(2)" checked>谷歌影像</input>
+    <input type="radio" name="radio_imagery" class="cesium-button" onchange="changeImagery(3)">天地图地图</input>
+    <input type="radio" name="radio_imagery" class="cesium-button" onchange="changeImagery(4)">天地图影像</input>
+    <input type="radio" name="radio_imagery" class="cesium-button" onchange="changeImagery(5)">天地图地形</input>
+    <input type="radio" name="radio_imagery" class="cesium-button" onchange="changeImagery(6)">高德地图</input>
+    <input type="radio" name="radio_imagery" class="cesium-button" onchange="changeImagery(7)">高德影像</input>
+    <input type="radio" name="radio_imagery" class="cesium-button" onchange="changeImagery(8)">ESRI地图</input>
+    <input type="radio" name="radio_imagery" class="cesium-button" onchange="changeImagery(9)">ESRI影像</input>
+
+    <br>
+
+    地形：
+    <input type="radio" name="radio_terrain" class="cesium-button" onchange="changeImagery(1)">谷歌地图</input>
+</div>
+
+<script>
+    var viewer;
+
+    function onload(Cesium) {
+        viewer = new Cesium.Viewer('cesiumContainer', {
+            // 底图
+            imageryProvider: new Cesium.UrlTemplateImageryProvider({
+                url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+            })
+        });
+        var scene = viewer.scene;
+        $('#loadingbar').remove();
+    }
+
+    // 底图切换
+    function changeImagery(code) {
+        viewer.imageryLayers.removeAll(); // 移除
+        switch (code) {
+            case 1:
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: "http://www.google.cn/maps/vt?lyrs=m@716&x={x}&y={y}&z={z}"
+                    })
+                );
+                break;
+            case 2:
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: "http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}"
+                    })
+                );
+                break;
+            case 3:
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: "http://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=9654e6de15fb2eb4aeb02a4191d9a712",
+                        subdomains: ['0', '1', '2', '3', '4', '5', '6', '7']
+                    })
+                );
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: "http://t{s}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=9654e6de15fb2eb4aeb02a4191d9a712",
+                        subdomains: ['0', '1', '2', '3', '4', '5', '6', '7']
+                    })
+                );
+                break;
+            case 4:
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: "http://t{s}.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=9654e6de15fb2eb4aeb02a4191d9a712",
+                        subdomains: ['0', '1', '2', '3', '4', '5', '6', '7']
+                    })
+                );
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: "http://t{s}.tianditu.gov.cn/DataServer?T=cia_w&x={x}&y={y}&l={z}&tk=9654e6de15fb2eb4aeb02a4191d9a712",
+                        subdomains: ['0', '1', '2', '3', '4', '5', '6', '7']
+                    })
+                );
+                break;
+            case 5:
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: "http://t{s}.tianditu.gov.cn/DataServer?T=ter_w&x={x}&y={y}&l={z}&tk=9654e6de15fb2eb4aeb02a4191d9a712",
+                        subdomains: ['0', '1', '2', '3', '4', '5', '6', '7']
+                    })
+                );
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: "http://t{s}.tianditu.gov.cn/DataServer?T=cta_w&x={x}&y={y}&l={z}&tk=9654e6de15fb2eb4aeb02a4191d9a712",
+                        subdomains: ['0', '1', '2', '3', '4', '5', '6', '7']
+                    })
+                );
+                break;
+            case 6:
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: "http://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}",
+                        subdomains: ["1", "2", "3", "4"]
+                    })
+                );
+                break;
+            case 7:
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: "http://webst0{s}.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}",
+                        subdomains: ["1", "2", "3", "4"]
+                    })
+                );
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.UrlTemplateImageryProvider({
+                        url: "http://webst0{s}.is.autonavi.com/appmaptile?style=8&x={x}&y={y}&z={z}",
+                        subdomains: ["1", "2", "3", "4"]
+                    })
+                );
+                break;
+            case 8:
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.ArcGisMapServerImageryProvider({
+                        url: 'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer'
+                    })
+                );
+                break;
+            case 9:
+                viewer.imageryLayers.addImageryProvider(
+                    new Cesium.ArcGisMapServerImageryProvider({
+                        url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+                    })
+                );
+                break;
+        }
+
+    }
+
+    // 测量工具
+
+    // 倾斜数据
+
+    // 单体化查询
+
+    // 摄像头
+
+    // 其他地物
+
+
+</script>
+</body>
+
+</html>

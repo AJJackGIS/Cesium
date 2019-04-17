@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>高铁模型</title>
+    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="../libs/supermap/pretty.css">
+    <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        .cesium-credit-image {
+            display: none;
+        }
+    </style>
+    <script src="train.js"></script>
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div id='loadingbar' class="spinner">
+    <div class="spinner-container container1">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container2">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+    <div class="spinner-container container3">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+        <div class="circle4"></div>
+    </div>
+</div>
+<script>
+
+  var viewer;
+  var scene;
+
+  function onload(Cesium) {
+    viewer = new Cesium.Viewer('cesiumContainer', {
+      imageryProvider: new Cesium.UrlTemplateImageryProvider({
+        url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+      }),
+      animation: true,
+      timeline: true
+    });
+    scene = viewer.scene;
+    $('#loadingbar').remove();
+
+    scene.camera.setView({
+      destination: new Cesium.Cartesian3(-2241524.7790367124, 5064773.652223807, 3163065.2781718834),
+      orientation: {
+        heading: 0.8625736285888541,
+        pitch: -0.16239335948776867,
+        roll: 6.283185307179586
+      }
+      // destination: new Cesium.Cartesian3(-2273952.675338101, 5000891.313735349, 3240648.589251684),
+      // orientation: {
+      //   heading: 5.994598545858926,
+      //   pitch: -0.17158929643722365,
+      //   roll: 6.2831853071795685
+      // }
+    });
+
+    DATA_MILESTONE_JG.forEach(function (point) {
+      viewer.entities.add({
+        name: point.mile,
+        position: Cesium.Cartesian3.fromDegrees(parseFloat(point.lon), parseFloat(point.lat), 19.5),
+        cylinder: {
+          length: 40.0, // 高度
+          topRadius: 2.0, // 顶部的宽度 == 当topRadius和bottomRadius一致的时，就是气缸
+          bottomRadius: 3.0, // 底部的宽度
+          material: Cesium.Color.fromCssColorString("#262929"),
+          outline: false
+        }
+      });
+    });
+
+    var controls = [];
+    var times = [];
+
+    DATA_MILESTONE_JG.forEach(function (point, index) {
+      controls.push(new Cesium.Cartesian3.fromDegrees(parseFloat(point.lon), parseFloat(point.lat), 39.5));
+      times.push(index / (DATA_MILESTONE_JG.length - 1));
+    });
+
+    var spline = new Cesium.CatmullRomSpline({
+      times: times,
+      points: controls
+    });
+
+    var positions = [];
+    var polylineVolumePositions = [];
+    var polylinePositions = [];
+    var totalPointSize = controls.length * 10;
+    for (var i = 0; i <= totalPointSize; i++) {
+      var cartesian3 = spline.evaluate(i / totalPointSize);
+      var cartographic = viewer.scene.globe.ellipsoid.cartesianToCartographic(cartesian3);
+      var lon = Cesium.Math.toDegrees(cartographic.longitude);
+      var lat = Cesium.Math.toDegrees(cartographic.latitude);
+      var height = cartographic.height;
+      polylineVolumePositions.push(lon);
+      polylineVolumePositions.push(lat);
+      polylineVolumePositions.push(height);
+      polylinePositions.push(lon);
+      polylinePositions.push(lat);
+      polylinePositions.push(height + 8);
+      positions.push(new Cesium.Cartesian3.fromDegrees(lon, lat, height + 8));
+    }
+
+    viewer.entities.add({
+      polylineVolume: {
+        positions: Cesium.Cartesian3.fromDegreesArrayHeights(polylineVolumePositions),
+        shape: [new Cesium.Cartesian2(-3, -3), new Cesium.Cartesian2(3, -3), new Cesium.Cartesian2(5, 5), new Cesium.Cartesian2(-5, 5)], // 矩形
+        cornerType: Cesium.CornerType.ROUNDED,
+        // material: Cesium.Color.GREY.withAlpha(0.5),
+        material: Cesium.Color.WHITE,
+        outline: false
+      }
+    });
+
+    viewer.entities.add({
+      polyline: {
+        positions: Cesium.Cartesian3.fromDegreesArrayHeights(polylinePositions),
+        width: 6,
+        material: new Cesium.PolylineDashMaterialProperty({
+          color: Cesium.Color.BLACK, // 线颜色
+          gapColor: Cesium.Color.WHITE, // 分段颜色==默认透明
+          dashLength: 60 // 分段线的长度 16px
+
+        }) // 分段线
+      }
+    });
+
+
+    var start = Cesium.JulianDate.fromDate(new Date(2015, 2, 25, 16));
+    var stop = Cesium.JulianDate.addSeconds(start, positions.length, new Cesium.JulianDate());
+
+    viewer.clock.startTime = start.clone();
+    viewer.clock.stopTime = stop.clone();
+    viewer.clock.currentTime = start.clone();
+    viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+    viewer.clock.multiplier = 0.05;
+    viewer.timeline.zoomTo(start, stop);
+
+    var property = new Cesium.SampledPositionProperty();
+    for (var i = 0; i < positions.length; i++) {
+      var radians = Cesium.Math.toRadians(i);
+      var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate());
+      var position = positions[i];
+      property.addSample(time, position);
+    }
+
+    var entity = viewer.entities.add({
+      availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start: start,
+        stop: stop
+      })]),
+      model: {
+        uri: '../models/Cesium_Ground.glb',
+        minimumPixelSize: 64
+      },
+      position: property,
+      orientation: new Cesium.VelocityOrientationProperty(property),
+      path: {
+        resolution: 1,
+        material: new Cesium.PolylineGlowMaterialProperty({
+          glowPower: 0.2,
+          color: Cesium.Color.YELLOW
+        }),
+        show: false,
+        width: 10
+      }
+    });
+
+    viewer.trackedEntity = entity;
+  }
+</script>
+</body>
+
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>粒子系统</title>
+    <script type="text/javascript" src="http://172.29.1.151:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="http://172.29.1.151:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"
+          type="text/css"/>
+    <style>
+        html, body, #map3d {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+<div id="map3d"></div>
+<script>
+  var viewer = new Cesium.Viewer('map3d', {
+    baseLayerPicker: false,
+    imageryProvider: new Cesium.UrlTemplateImageryProvider({
+      url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+    })
+  });
+
+  var start = Cesium.JulianDate.fromDate(new Date(2015, 2, 25, 16));
+  var stop = Cesium.JulianDate.addSeconds(start, 360, new Cesium.JulianDate());
+
+  viewer.clock.startTime = start.clone();
+  viewer.clock.stopTime = stop.clone();
+  viewer.clock.currentTime = start.clone();
+  viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+  viewer.clock.multiplier = 1;
+  viewer.timeline.zoomTo(start, stop);
+
+  // 模型位置
+  function computeModelMatrix(entity, time) {
+    var position = Cesium.Property.getValueOrUndefined(entity.position, time, new Cesium.Cartesian3());
+    if (!Cesium.defined(position)) {
+      return undefined;
+    }
+    var orientation = Cesium.Property.getValueOrUndefined(entity.orientation, time, new Cesium.Quaternion());
+    var modelMatrix = null;
+    if (!Cesium.defined(orientation)) {
+      modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(position, undefined, new Cesium.Matrix4());
+    } else {
+      modelMatrix = Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromQuaternion(orientation, new Cesium.Matrix3()), position, modelMatrix);
+    }
+    return modelMatrix;
+  }
+
+  // 粒子发射系统的模型位置
+  function computeEmitterModelMatrix() {
+    var hpr = Cesium.HeadingPitchRoll.fromDegrees(0, 0, 0, new Cesium.HeadingPitchRoll());
+    var trs = new Cesium.TranslationRotationScale();
+    trs.translation = Cesium.Cartesian3.fromElements(2.5, 4.0, 1.0, new Cesium.Cartesian3()); // 设置粒子系统相对于模型坐标的偏移
+    trs.rotation = Cesium.Quaternion.fromHeadingPitchRoll(hpr, new Cesium.Quaternion());
+    return Cesium.Matrix4.fromTranslationRotationScale(trs, new Cesium.Matrix4());
+  }
+
+  function computeCirclularFlight(lon, lat, radius) {
+    var property = new Cesium.SampledPositionProperty();
+    for (var i = 0; i <= 360; i += 45) {
+      var radians = Cesium.Math.toRadians(i);
+      var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate());
+      var position = Cesium.Cartesian3.fromDegrees(lon + (radius * 1.5 * Math.cos(radians)), lat + (radius * Math.sin(radians)), Cesium.Math.nextRandomNumber() * 500 + 1750);
+      property.addSample(time, position);
+    }
+    return property;
+  }
+
+  // function computeCirclularFlight(lon, lat, height) {
+  //     var property = new Cesium.SampledPositionProperty();
+  //     for (var i = 0; i <= 360; i += 30) {
+  //         var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate());
+  //         var position = Cesium.Cartesian3.fromDegrees(lon + i, lat, height);
+  //         property.addSample(time, position);
+  //     }
+  //     return property;
+  // }
+
+  var circularPosition = computeCirclularFlight(-112.110693, 36.0994841, 0.03);
+  // var circularPosition = computeCirclularFlight(0, 0, 36000000); // 禁止卫星
+  var staticPosition = Cesium.Cartesian3.fromDegrees(-112.110693, 36.0994841, 1000);
+
+  // 模型
+  var entity = viewer.entities.add({
+    availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+      start: start,
+      stop: stop
+    })]),
+    model: {
+      uri: 'Cesium_Air.gltf',
+      minimumPixelSize: 64
+    },
+    position: circularPosition,
+    orientation: new Cesium.VelocityOrientationProperty(circularPosition),
+    // position: staticPosition, // ==stop fly
+    // orientation: undefined
+    path: {
+      resolution: 1,
+      material: new Cesium.PolylineGlowMaterialProperty({
+        glowPower: 0.2,
+        color: Cesium.Color.YELLOW
+      }),
+
+      width: 10
+    }
+  });
+  // entity.position.setInterpolationOptions({
+  //     interpolationDegree : 5,
+  //     interpolationAlgorithm : Cesium.LagrangePolynomialApproximation
+  // });
+  viewer.trackedEntity = entity;
+
+  // 粒子系统
+  var particleSystem = viewer.scene.primitives.add(new Cesium.ParticleSystem({
+    image: 'fire.png', // 粒子资源，用于广告牌的URI，HTMLImageElement或HTMLCanvasElement。
+    startColor: Cesium.Color.RED.withAlpha(0.7), //粒子出生时的颜色
+    endColor: Cesium.Color.YELLOW.withAlpha(0.3), //当粒子死亡时的颜色
+    startScale: 1, //粒子出生时的比例，相对于原始大小
+    endScale: 4, //粒子在死亡时的比例
+    life: 1, //以秒为单位设置粒子的最小和最大寿命
+    // minimumLife: 1, //以秒为单位设置粒子的最短寿命
+    // maximumLife: 1, //以秒为单位设置粒子的最大寿命
+    speed: 5,//设置以米/秒为单位的最小和最大速度
+    // minimumSpeed: 5, //设置以米/秒为单位的最小速度
+    // maximumSpeed: 5, //设置以米/秒为单位的最大速度
+    width: 20,  // 设置以像素为单位的粒子的最小和最大宽度
+    // minimumWidth: viewModel.particleSize, //设置粒子的最小宽度（以像素为单位）。
+    // maximumWidth: viewModel.particleSize, //设置粒子的最大宽度（以像素为单位）。
+    height: 20, //设置粒子的最小和最大高度（以像素为单位）。
+    // minimumHeight: viewModel.particleSize, //设置粒子的最小高度（以像素为单位）。
+    // maximumHeight: viewModel.particleSize, //设置粒子的最大高度（以像素为单位）。
+    rate: 10, //每秒发射的粒子数量
+    // bursts: [
+    //     // time：在粒子系统生命周期开始之后的几秒钟内将发生突发事件。
+    //     // minimum：突发中发射的最小粒子数量
+    //     // maximum：突发中发射的最大粒子数量
+    //     // new Cesium.ParticleBurst({time: 5.0, minimum: 1, maximum: 10}),   // 当在5秒时，发射的数量为50-100
+    //     // new Cesium.ParticleBurst({time: 10.0, minimum: 1, maximum: 10}), // 当在10秒时，发射的数量为200-300
+    //     // new Cesium.ParticleBurst({time: 15.0, minimum: 1, maximum: 10})  // 当在15秒时，发射的数量为500-800
+    //     new Cesium.ParticleBurst({time: 5.0, minimum: 50, maximum: 100}),   // 当在5秒时，发射的数量为50-100
+    //     new Cesium.ParticleBurst({time: 10.0, minimum: 100, maximum: 200}), // 当在10秒时，发射的数量为200-300
+    //     new Cesium.ParticleBurst({time: 15.0, minimum: 200, maximum: 300})  // 当在15秒时，发射的数量为500-800
+    // ], //数组ParticleBurst，周期性地发射粒子脉冲串
+    lifeTime: 16, //多长时间的粒子系统将以秒为单位发射粒子
+    loop: true, //是否粒子系统应该在完成时循环它的爆发
+    // new Cesium.CircleEmitter(0.5)
+    // new Cesium.BoxEmitter(new Cesium.Cartesian3(0.1, 0.1, 0.1))
+    // new Cesium.ConeEmitter(Cesium.Math.toRadians(30.0))
+    emitter: new Cesium.CircleEmitter(0.5), //此系统的粒子发射器  共有 BoxEmitter,CircleEmitter,ConeEmitter,SphereEmitter 几类
+    emitterModelMatrix: computeEmitterModelMatrix(), // 4x4转换矩阵，用于在粒子系统本地坐标系中转换粒子系统发射器
+    modelMatrix: computeModelMatrix(entity, Cesium.JulianDate.now()), // 4x4转换矩阵，可将粒子系统从模型转换为世界坐标
+    forces: [applyGravity] // 强制回调函数--例子：这是添加重力效果
+  }));
+
+  /**
+   * 模拟飞行状态，停止与飞行
+   setTimeout(function () {
+        entity.position = circularPosition;
+        entity.orientation = new Cesium.VelocityOrientationProperty(circularPosition);
+    }, 10000);
+
+   setTimeout(function () {
+        // entity.position = staticPosition;
+        entity.position = entity.position;
+        entity.orientation = undefined;
+    }, 5000);
+
+   /**
+   * 模拟飞行出事故时，粒子效果
+   setTimeout(function () {
+        particleSystem.rate = 10; // 加大效果
+    }, 5000);
+
+   setTimeout(function () {
+        particleSystem.rate = 0; // 关闭效果
+    }, 10000);
+   */
+
+  /**
+   * 用于在每个时间步上对粒子施加力的函数
+   * @param particle 要施加力的粒子
+   * @param dt 自上次更新以来的时间
+   */
+  function applyGravity(particle, dt) {
+    var position = particle.position;
+    var gravityVector = Cesium.Cartesian3.normalize(position, new Cesium.Cartesian3());
+    Cesium.Cartesian3.multiplyByScalar(gravityVector, 0 * dt, gravityVector); // 设置重力效果大小 -20时效果比较明显
+    particle.velocity = Cesium.Cartesian3.add(particle.velocity, gravityVector, particle.velocity);
+  }
+
+  // 当场景运动起来时，粒子系统要实时计算位置，静止的场景可以省略这个
+  viewer.scene.preRender.addEventListener(function (scene, time) {
+    particleSystem.modelMatrix = computeModelMatrix(entity, time);
+    particleSystem.emitterModelMatrix = computeEmitterModelMatrix();
+  });
+
+</script>
+</body>
+</html>
