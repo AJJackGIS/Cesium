@@ -65,11 +65,23 @@
     量测：
     <input class="draw" type="radio" name="draw" value="0" checked="checked" onchange="changeMeasureType(true)">贴地形
     <input class="draw" type="radio" name="draw" value="1" onchange="changeMeasureType(false)">空间
-    <button class="cesium-button" id="point">画点</button>
-    <button class="cesium-button" id="line">画线</button>
-    <button class="cesium-button" id="polygon">画面</button>
-    <button class="cesium-button" id="elevation">量高</button>
+    <!--<button class="cesium-button" id="point">画点</button>-->
+    <button class="cesium-button" id="line">测量线</button>
+    <button class="cesium-button" id="polygon">测量面</button>
+    <button class="cesium-button" id="elevation">测量高</button>
     <button class="cesium-button" id="remove">移除</button>
+
+    <br> <br>
+
+    单体化：
+    <button class="cesium-button" id="search">单体化查询</button>
+    <button class="cesium-button" id="clear">移除</button>
+
+    <br> <br>
+
+    浏览：
+    <button class="cesium-button" id="rotateTileSet">围绕模型旋转</button>
+    <button class="cesium-button" id="flyToPath">指定路径飞行</button>
 </div>
 
 <script>
@@ -113,8 +125,6 @@
     // }).otherwise(function (error) {
     //     console.log(error);
     // });
-
-    var scene = viewer.scene;
 
     // 底图切换
     function changeImagery(code) {
@@ -247,9 +257,9 @@
         tool.setIsClampGround(type)  // 设置是否开启贴地模式
     }
 
-    document.getElementById('point').onclick = function () {
-        tool.startPoint()  // 画点
-    };
+    // document.getElementById('point').onclick = function () {
+    //     tool.startPoint()  // 画点
+    // };
     document.getElementById('line').onclick = function () {
         tool.startPolyline()  // 画线
     };
@@ -264,59 +274,165 @@
     };
 
     // 倾斜数据
-    var tileSet = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
-        url: 'http://localhost:90/b3dm/tileset.json'
-    }));
-    viewer.scene.primitives.add(tileSet);
+    // var tileSet = new Cesium.Cesium3DTileset({
+    //     url: 'http://localhost:90/b3dm/tileset.json'
+    // });
+    //
+    // tileSet.readyPromise.then(function (tileset) {
+    //     viewer.scene.primitives.add(tileset);
+    //     var default_HeadingPitchRange = new Cesium.HeadingPitchRange(0.0, -0.5, tileset.boundingSphere.radius * 2.0);
+    //     viewer.zoomTo(tileset, default_HeadingPitchRange);
+    //     // overwrite homebutton
+    //     viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function (e) {
+    //         e.cancel = true;
+    //         viewer.zoomTo(tileset, default_HeadingPitchRange);
+    //     });
+    // }).otherwise(function (error) {
+    //     console.log(error);
+    // });
 
-    tileSet.readyPromise.then(function (tileset) {
-        viewer.scene.primitives.add(tileset);
-        var default_HeadingPitchRange = new Cesium.HeadingPitchRange(0.0, -0.5, tileset.boundingSphere.radius * 2.0);
-        viewer.zoomTo(tileset, default_HeadingPitchRange);
-        // overwrite homebutton
-        viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function (e) {
-            e.cancel = true;
-            viewer.zoomTo(tileset, default_HeadingPitchRange);
-        });
-    }).otherwise(function (error) {
-        console.log(error);
+    var tileset = new Cesium.Cesium3DTileset({
+        url: 'http://localhost:90/fhsq/tileset.json'
+    });
+    viewer.scene.primitives.add(tileset);
+    var longitude;
+    var latitude;
+    tileset.readyPromise.then(function (argument) {
+        //如果tileset自带世界矩阵矩阵，那么计算放置的经纬度和heading
+        var mat = Cesium.Matrix4.fromArray(tileset._root.transform);
+        var pos = Cesium.Matrix4.getTranslation(mat, new Cesium.Cartesian3());
+        var wpos = Cesium.Cartographic.fromCartesian(pos);
+        longitude = Cesium.Math.toDegrees(wpos.longitude);
+        latitude = Cesium.Math.toDegrees(wpos.latitude);
+        var height = wpos.height;
+        //取旋转矩阵
+        var rotmat = Cesium.Matrix4.getRotation(mat, new Cesium.Matrix3());
+        //默认的旋转矩阵
+        var defrotmat = Cesium.Matrix4.getRotation(Cesium.Transforms.eastNorthUpToFixedFrame(pos), new Cesium.Matrix3());
+        //计算rotmat 的x轴，在defrotmat 上 旋转
+        var xaxis = Cesium.Matrix3.getColumn(defrotmat, 0, new Cesium.Cartesian3());
+        var yaxis = Cesium.Matrix3.getColumn(defrotmat, 1, new Cesium.Cartesian3());
+        var zaxis = Cesium.Matrix3.getColumn(defrotmat, 2, new Cesium.Cartesian3());
+        var dir = Cesium.Matrix3.getColumn(rotmat, 0, new Cesium.Cartesian3());
+        dir = Cesium.Cartesian3.cross(dir, zaxis, dir);
+        dir = Cesium.Cartesian3.cross(zaxis, dir, dir);
+        dir = Cesium.Cartesian3.normalize(dir, dir);
+        var heading = Cesium.Cartesian3.angleBetween(xaxis, dir);
+        var ay = Cesium.Cartesian3.angleBetween(yaxis, dir);
+        if (ay > Math.PI * 0.5) {
+            heading = 2 * Math.PI - heading;
+        }
+        heading = Cesium.Math.toDegrees(heading);
+        // 重新放置模型，防止模型飘在空中
+        var position = Cesium.Cartesian3.fromDegrees(longitude, latitude, height - 10);
+        var mat = Cesium.Transforms.eastNorthUpToFixedFrame(position);
+        var rotationX = Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationZ(Cesium.Math.toRadians(heading)));
+        Cesium.Matrix4.multiply(mat, rotationX, mat);
+        tileset._root.transform = mat;
+        // 飞到模型包围盒
+        viewer.camera.flyToBoundingSphere(tileset.boundingSphere);
     });
 
 
     // 单体化查询
+    var buildingEntity; // 单体化面
+    document.getElementById('search').onclick = function () {
+        viewer.screenSpaceEventHandler.setInputAction(function (clickEvent) {
+            var screenPosition = clickEvent.position;
+            // 屏幕坐标转大地坐标
+            // var cartesian = viewer.scene.camera.pickEllipsoid(screenPosition, viewer.scene.globe.ellipsoid); // 世界坐标
+            // var cartesian = viewer.scene.globe.pick(viewer.camera.getPickRay(screenPosition), viewer.scene); // 地球表面的世界坐标，不包括模型、倾斜摄影表面
+            var cartesian = viewer.scene.pickPosition(screenPosition); // 场景坐标, 有模型 、倾斜
+            // 大地坐标转经纬度坐标
+            var cartographic = viewer.scene.globe.ellipsoid.cartesianToCartographic(cartesian);
+            var lat = Cesium.Math.toDegrees(cartographic.latitude);
+            var lon = Cesium.Math.toDegrees(cartographic.longitude);
+            var height = cartographic.height;
 
-    // 存储点击选中的feature
-    var selectFeature = undefined;
+            // 通过经纬度及高度查询点击的楼栋，得到楼栋平面坐标集合
+            var tolerance = 0.0002709031105; // 容差范围
+            var bbox = (lon - tolerance) + "," + (lat - tolerance) + "," + (lon + tolerance) + "," + (lat + tolerance);
+            $.get("http://localhost:8011/geoserver/fhsq/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetFeatureInfo&FORMAT=image/png&TRANSPARENT=true&QUERY_LAYERS=fhsq:buildings&LAYERS=fhsq:buildings&exceptions=application/vnd.ogc.se_inimage&INFO_FORMAT=text/html&FEATURE_COUNT=1&X=50&Y=50&SRS=EPSG:4326&STYLES=&WIDTH=101&HEIGHT=101&BBOX=" + bbox, function (feature) {
+                var propertyHtml = "未查询到内容...";
+                var title = "结果";
+                try {
+                    if (feature) {
+                        feature = JSON.parse(feature);
+                        if (feature && feature.length > 0) {
+                            // 获取该feature的属性信息
+                            propertyHtml = "";
+                            feature = feature[0];
+                            title = feature["no"];
+                            for (var key in feature) {
+                                var propertyName = key;
+                                if (key != "the_geom") {
+                                    propertyHtml += "<tr><td>" + propertyName + "</td><td>" + feature[key] + "</td></tr>";
+                                }
+                            }
 
-    // 注册屏幕空间事件
-    viewer.screenSpaceEventHandler.setInputAction(function (clickEvent) {
-        var feature = viewer.scene.pick(clickEvent.position); // When a feature of a 3D Tiles tileset is picked, pick returns a Cesium3DTileFeature object.
-        if (Cesium.defined(feature) && feature instanceof Cesium.Cesium3DTileFeature) {
-            // 显示该feature
-            feature.color = Cesium.Color.LIME; // 更改feature的颜色
+                            // 绘制面并设置为贴模型
+                            var polygon = feature["the_geom"];
+                            var regex = /\((.+?)\)/g;
+                            polygon = polygon.match(regex)[0];
+                            polygon = polygon.substring(2, polygon.length - 1);
 
-            // 重置之前的选中的要素
-            if (Cesium.defined(selectFeature)) {
-                selectFeature.color = new Cesium.Color();
-            }
-            // 更新选中的feature
-            selectFeature = feature;
+                            var positions = [];
+                            var points = polygon.split(',');
+                            for (var i = 0; i < points.length; i++) {
+                                var point = points[i].trim().split(" ");
+                                positions.push(parseFloat(point[0]));
+                                positions.push(parseFloat(point[1]));
+                            }
 
-            // 获取该feature的属性信息
-            var propertyNames = feature.getPropertyNames(); // 得到所有的属性名称
-            var length = propertyNames.length;
-            var propertyHtml = "";
-            for (var i = 0; i < length; ++i) {
-                var propertyName = propertyNames[i];
-                propertyHtml += "<tr><td>" + propertyName + "</td><td>" + feature.getProperty(propertyName) + "</td></tr>";
-            }
-            // 显示属性面板(infoBox = true)
-            var selelctEntity = new Cesium.Entity();
-            selelctEntity.name = feature.getProperty("name");
-            selelctEntity.description = "<table class='cesium-infoBox-defaultTable'><tbody> " + propertyHtml + " </tbody></table>";
-            viewer.selectedEntity = selelctEntity; // 这个的地方的selectedEntity的属性跟模型显示无关，只是对view的infoBox属性设置为true有关，出现选中的列表而已
-        }
-    }, Cesium.ScreenSpaceEventType.LEFT_CLICK); // 左击
+                            if (buildingEntity){
+                                viewer.entities.remove(buildingEntity);
+                            }
+
+                            buildingEntity = viewer.entities.add({
+                                polygon: {
+                                    hierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(positions)),
+                                    material: Cesium.Color.RED.withAlpha(0.5),
+                                    classificationType: Cesium.ClassificationType.BOTH // 贴地表和贴模型
+                                }
+                            });
+                        }
+                    }
+                } catch (e) {
+
+                }
+
+                // 显示属性面板(infoBox = true)
+                var selelctEntity = new Cesium.Entity();
+                selelctEntity.name = title;
+                selelctEntity.description = "<table class='cesium-infoBox-defaultTable'><tbody> " + propertyHtml + " </tbody></table>";
+                viewer.selectedEntity = selelctEntity; // 这个的地方的selectedEntity的属性跟模型显示无关，只是对view的infoBox属性设置为true有关，出现选中的列表而已
+            });
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK); // 左击
+    };
+    document.getElementById('clear').onclick = function () {
+        viewer.entities.remove(buildingEntity);
+        viewer.infoBox.viewModel.closeClicked.raiseEvent();
+        viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    };
+
+    // 用户关闭infobox事件
+    viewer.infoBox.viewModel.closeClicked.addEventListener(function (args) {
+        if (buildingEntity)
+        viewer.entities.remove(buildingEntity);
+    });
+
+    // 飞行
+    document.getElementById('rotateTileSet').onclick = function () {
+        var heading = 0;
+        viewer.clock.onTick.addEventListener(function () {
+            heading += 0.005;
+            viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(longitude, latitude), new Cesium.HeadingPitchRange(heading, -0.5, 800));
+        });
+
+    };
+    document.getElementById('flyToPath').onclick = function () {
+
+    };
 
     // 摄像头
 
