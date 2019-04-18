@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">
     <script src="../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>
     <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
+    <link href="video-js.css" rel="stylesheet">
+    <script src="videojs-ie8.min.js"></script>
+    <script src="video.js"></script>
     <!--<script type="text/javascript" src="../libs/jquery/require.min.js" data-main="../libs/supermap/main"></script>-->
     <style>
         html,
@@ -35,13 +38,31 @@
             padding: 16px;
             font-size: 14px;
         }
+
+        .video {
+            position: absolute;
+            top: 280px;
+            left: 10px;
+            padding: 5px;
+            background-color: white;
+            border-radius: 8px;
+            display: none;
+        }
     </style>
     <script src="CesiumMeasure.min.js"></script>
+    <script src="CesiumMeasure.js"></script>
 
 </head>
 
 <body>
 <div id="cesiumContainer"></div>
+<div class="video">
+    <!--  摄像头  -->
+    <!--<video id="example_video_1" class="video-js vjs-default-skin" autoplay controls preload="auto" width="640px"-->
+    <!--height="360px" data-setup="{}">-->
+    <!--<source src="rtmp://10.129.75.30:1935/live/114" type="rtmp/flv">-->
+    <!--</video>-->
+</div>
 <!--底图切换-->
 <div class="controlPanel">
     底图切换：
@@ -261,7 +282,8 @@
     //     tool.startPoint()  // 画点
     // };
     document.getElementById('line').onclick = function () {
-        tool.startPolyline()  // 画线
+        // tool.startPolyline()  // 画线
+        measurePolyLine(viewer);
     };
     document.getElementById('polygon').onclick = function () {
         tool.startPolygon();  // 画面
@@ -370,7 +392,7 @@
                                 }
                             }
 
-                            // 绘制面并设置为贴模型
+                            // 分析坐标数据
                             var polygon = feature["the_geom"];
                             var regex = /\((.+?)\)/g;
                             polygon = polygon.match(regex)[0];
@@ -384,7 +406,8 @@
                                 positions.push(parseFloat(point[1]));
                             }
 
-                            if (buildingEntity){
+                            // 绘制面并设置为贴模型
+                            if (buildingEntity) {
                                 viewer.entities.remove(buildingEntity);
                             }
 
@@ -392,7 +415,7 @@
                                 polygon: {
                                     hierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(positions)),
                                     material: Cesium.Color.RED.withAlpha(0.5),
-                                    classificationType: Cesium.ClassificationType.BOTH // 贴地表和贴模型
+                                    classificationType: Cesium.ClassificationType.BOTH // 贴地表和贴模型,如果设置了，这不能使用挤出高度
                                 }
                             });
                         }
@@ -404,21 +427,21 @@
                 // 显示属性面板(infoBox = true)
                 var selelctEntity = new Cesium.Entity();
                 selelctEntity.name = title;
-                selelctEntity.description = "<table class='cesium-infoBox-defaultTable'><tbody> " + propertyHtml + " </tbody></table>";
-                viewer.selectedEntity = selelctEntity; // 这个的地方的selectedEntity的属性跟模型显示无关，只是对view的infoBox属性设置为true有关，出现选中的列表而已
+                selelctEntity.description = "<table class='cesium-infoBox-defaultTable'><tbody>" + propertyHtml + "</tbody></table>";
+                viewer.selectedEntity = selelctEntity;
             });
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK); // 左击
     };
     document.getElementById('clear').onclick = function () {
         viewer.entities.remove(buildingEntity);
         viewer.infoBox.viewModel.closeClicked.raiseEvent();
-        viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+        viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK); // 取消事件注册
     };
 
     // 用户关闭infobox事件
     viewer.infoBox.viewModel.closeClicked.addEventListener(function (args) {
         if (buildingEntity)
-        viewer.entities.remove(buildingEntity);
+            viewer.entities.remove(buildingEntity);
     });
 
     // 飞行
@@ -433,8 +456,6 @@
     document.getElementById('flyToPath').onclick = function () {
 
     };
-
-    // 摄像头
 
     // 其他地物
 
