@@ -267,32 +267,33 @@
     }
 
     // 测量工具
-    const tool = new Cesium.DrawTool({
-        viewer: viewer,
-        isMeasure: true,  // 是否开启测量模式
-        isClampGround: true,  // 是否开启贴地模式
-        lineWidth: 1.0    // 设置线宽
-    });
+    // const tool = new Cesium.DrawTool({
+    //     viewer: viewer,
+    //     isMeasure: true,  // 是否开启测量模式
+    //     isClampGround: true,  // 是否开启贴地模式
+    //     lineWidth: 1.0    // 设置线宽
+    // });
+    const measureTool = new MeasureTools(viewer);
 
-    function changeMeasureType(type) {
-        tool.setIsClampGround(type)  // 设置是否开启贴地模式
-    }
+    // function changeMeasureType(type) {
+    //     tool.setIsClampGround(type)  // 设置是否开启贴地模式
+    // }
 
     // document.getElementById('point').onclick = function () {
     //     tool.startPoint()  // 画点
     // };
     document.getElementById('line').onclick = function () {
         // tool.startPolyline()  // 画线
-        measurePolyLine(viewer);
+        measureTool.measurePolyLine();
     };
-    document.getElementById('polygon').onclick = function () {
-        tool.startPolygon();  // 画面
-    };
-    document.getElementById('elevation').onclick = function () {
-        tool.startElevation();  // 量高
-    };
+    // document.getElementById('polygon').onclick = function () {
+    //     tool.startPolygon();  // 画面
+    // };
+    // document.getElementById('elevation').onclick = function () {
+    //     tool.startElevation();  // 量高
+    // };
     document.getElementById('remove').onclick = function () {
-        tool.destory()
+        measureTool.destroy();
     };
 
     // 倾斜数据
