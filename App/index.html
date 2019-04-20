@@ -84,8 +84,8 @@
     <br> <br>
 
     量测：
-    <input class="draw" type="radio" name="draw" value="0" checked="checked" onchange="changeMeasureType(true)">贴地形
-    <input class="draw" type="radio" name="draw" value="1" onchange="changeMeasureType(false)">空间
+    <!--<input class="draw" type="radio" name="draw" value="0" checked="checked" onchange="changeMeasureType(true)">贴地形-->
+    <!--<input class="draw" type="radio" name="draw" value="1" onchange="changeMeasureType(false)">空间-->
     <!--<button class="cesium-button" id="point">画点</button>-->
     <button class="cesium-button" id="line">测量线</button>
     <button class="cesium-button" id="polygon">测量面</button>
@@ -96,6 +96,7 @@
 
     单体化：
     <button class="cesium-button" id="search">单体化查询</button>
+    <button class="cesium-button" id="show">显示/隐藏</button>
     <button class="cesium-button" id="clear">移除</button>
 
     <br> <br>
@@ -290,9 +291,10 @@
         // tool.startPolygon();  // 画面
         measureTool.measurePolygon();
     };
-    // document.getElementById('elevation').onclick = function () {
-    //     tool.startElevation();  // 量高
-    // };
+    document.getElementById('elevation').onclick = function () {
+        // tool.startElevation();  // 量高
+        measureTool.measureHeight();
+    };
     document.getElementById('remove').onclick = function () {
         measureTool.destroy();
     };
@@ -357,6 +359,10 @@
         viewer.camera.flyToBoundingSphere(tileset.boundingSphere);
     });
 
+
+    document.getElementById('show').onclick = function () {
+        tileset.show = !tileset.show;
+    };
 
     // 单体化查询
     var buildingEntity; // 单体化面

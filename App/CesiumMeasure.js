@@ -165,6 +165,102 @@ function MeasureTools(viewer) {
     };
 
     /**
+     * 测高
+     */
+    this.measureHeight = function () {
+        var positions = [];
+        var labelEntity_1 = null; // 标签实体
+        var labelEntity_2 = null; // 标签实体
+        var labelEntity_3 = null; // 标签实体
+
+        // 注册鼠标左击事件
+        viewer.screenSpaceEventHandler.setInputAction(function (clickEvent) {
+            var cartesian = viewer.scene.pickPosition(clickEvent.position); // 坐标
+
+            // 存储第一个点
+            if (positions.length == 0) {
+                positions.push(cartesian.clone());
+                addPoint(cartesian);
+
+                // 注册鼠标移动事件
+                viewer.screenSpaceEventHandler.setInputAction(function (moveEvent) {
+                    var movePosition = viewer.scene.pickPosition(moveEvent.endPosition); // 鼠标移动的点
+                    if (positions.length >= 2) {
+                        positions.pop();
+                        positions.pop();
+                        positions.pop();
+
+                        var cartographic = Cesium.Cartographic.fromCartesian(movePosition);
+                        var height = Cesium.Cartographic.fromCartesian(positions[0]).height;
+
+                        var verticalPoint = Cesium.Cartesian3.fromDegrees(Cesium.Math.toDegrees(cartographic.longitude), Cesium.Math.toDegrees(cartographic.latitude), height);
+                        positions.push(verticalPoint);
+                        positions.push(movePosition);
+                        positions.push(positions[0]);
+
+                        // 绘制label
+                        if (labelEntity_1) {
+                            viewer.entities.remove(labelEntity_1);
+                            entityCollection.splice(entityCollection.indexOf(labelEntity_1), 1);
+                            viewer.entities.remove(labelEntity_2);
+                            entityCollection.splice(entityCollection.indexOf(labelEntity_2), 1);
+                            viewer.entities.remove(labelEntity_3);
+                            entityCollection.splice(entityCollection.indexOf(labelEntity_3), 1);
+                        }
+
+                        // 计算中点
+                        var centerPoint_1 = Cesium.Cartesian3.midpoint(positions[0], positions[1], new Cesium.Cartesian3());
+                        // 计算距离
+                        var lengthText_1 = "水平距离：" + getLengthText(positions[0], positions[1]);
+
+                        labelEntity_1 = addLabel(centerPoint_1, lengthText_1);
+                        entityCollection.push(labelEntity_1);
+
+                        // 计算中点
+                        var centerPoint_2 = Cesium.Cartesian3.midpoint(positions[1], positions[2], new Cesium.Cartesian3());
+                        // 计算距离
+                        var lengthText_2 = "垂直距离：" + getLengthText(positions[1], positions[2]);
+
+                        labelEntity_2 = addLabel(centerPoint_2, lengthText_2);
+                        entityCollection.push(labelEntity_2);
+
+                        // 计算中点
+                        var centerPoint_3 = Cesium.Cartesian3.midpoint(positions[2], positions[3], new Cesium.Cartesian3());
+                        // 计算距离
+                        var lengthText_3 = "直线距离：" + getLengthText(positions[2], positions[3]);
+
+                        labelEntity_3 = addLabel(centerPoint_3, lengthText_3);
+                        entityCollection.push(labelEntity_3);
+
+                    } else {
+                        var verticalPoint = new Cesium.Cartesian3(movePosition.x, movePosition.y, positions[0].z);
+                        positions.push(verticalPoint);
+                        positions.push(movePosition);
+                        positions.push(positions[0]);
+                        // 绘制线
+                        addLine(positions);
+                    }
+                }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+            } else {
+                // 存储第二个点
+                positions.pop();
+                positions.pop();
+                positions.pop();
+                var cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                var height = Cesium.Cartographic.fromCartesian(positions[0]).height;
+
+                var verticalPoint = Cesium.Cartesian3.fromDegrees(Cesium.Math.toDegrees(cartographic.longitude), Cesium.Math.toDegrees(cartographic.latitude), height);
+                positions.push(verticalPoint);
+                positions.push(cartesian);
+                positions.push(positions[0]);
+                addPoint(cartesian);
+                viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    };
+
+    /**
      * 添加点
      * @param position
      */
