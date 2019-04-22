@@ -585,51 +585,50 @@
                 {x: 114.46397468741692, y: 30.440616656292047, z: 29.030040049278856, icon: '宿舍'}
             ];
 
-            var instances = [];
             locations.forEach(function (point) {
 
                 var basePoint = point;
                 var extractPoint = {x: basePoint.x, y: basePoint.y, z: basePoint.z + 20};
 
-                // polyLines.push(viewer.entities.add({
-                //     // name: 'Red line on the surface',
-                //     polyline: {
-                //         positions: Cesium.Cartesian3.fromDegreesArrayHeights([basePoint.x, basePoint.y, basePoint.z, extractPoint.x, extractPoint.y, extractPoint.z]),
-                //         width: 2,
-                //
-                //         // material: Cesium.Color.RED // 普通样式
-                //
-                //         material: new Cesium.PolylineGlowMaterialProperty({
-                //             glowPower: 0.2, // 发光的宽度 为 线的 倍数
-                //             color: Cesium.Color.RED
-                //         }) // 发光样式
-                //
-                //         // material: new Cesium.PolylineOutlineMaterialProperty({
-                //         //     color: Cesium.Color.ORANGE,
-                //         //     outlineWidth: 2,
-                //         //     outlineColor: Cesium.Color.RED
-                //         // }) // 线的边框线
-                //
-                //
-                //     }
-                // }));
-
-
-                var polyLine = new Cesium.SimplePolylineGeometry({
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights([basePoint.x, basePoint.y, basePoint.z, extractPoint.x, extractPoint.y, extractPoint.z])
-                });
-
-                var geometry = Cesium.SimplePolylineGeometry.createGeometry(polyLine);
-
-                instances.push(new Cesium.GeometryInstance({
+                polyLines.push(viewer.entities.add({
                     id: Cesium.createGuid(),
-                    geometry: geometry,
-                    attributes: {
-                        color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.RED.withAlpha(0.6))
-                        // color: Cesium.Color.RED.withAlpha(0.6)
-                        // width: 10
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights([basePoint.x, basePoint.y, basePoint.z, extractPoint.x, extractPoint.y, extractPoint.z]),
+                        width: 2,
+
+                        // material: Cesium.Color.RED // 普通样式
+
+                        material: new Cesium.PolylineGlowMaterialProperty({
+                            glowPower: 0.2, // 发光的宽度 为 线的 倍数
+                            color: Cesium.Color.RED
+                        }) // 发光样式
+
+                        // material: new Cesium.PolylineOutlineMaterialProperty({
+                        //     color: Cesium.Color.ORANGE,
+                        //     outlineWidth: 2,
+                        //     outlineColor: Cesium.Color.RED
+                        // }) // 线的边框线
+
+
                     }
                 }));
+
+
+                // var polyLine = new Cesium.SimplePolylineGeometry({
+                //     positions: Cesium.Cartesian3.fromDegreesArrayHeights([basePoint.x, basePoint.y, basePoint.z, extractPoint.x, extractPoint.y, extractPoint.z])
+                // });
+                //
+                // var geometry = Cesium.SimplePolylineGeometry.createGeometry(polyLine);
+                //
+                // polyLines.push(new Cesium.GeometryInstance({
+                //     id: Cesium.createGuid(),
+                //     geometry: geometry,
+                //     attributes: {
+                //         color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.RED.withAlpha(0.6))
+                //         // color: Cesium.Color.RED.withAlpha(0.6)
+                //         // width: 10
+                //     }
+                // }));
 
                 billboards.add({
                     id: Cesium.createGuid(),
@@ -645,10 +644,10 @@
 
             viewer.scene.primitives.add(billboards);
 
-            viewer.scene.primitives.add(new Cesium.Primitive({
-                geometryInstances: instances,
-                appearance: new Cesium.PerInstanceColorAppearance() //使用PerInstanceColorAppearance不同颜色来遮蔽每个实例
-            }));
+            // viewer.scene.primitives.add(new Cesium.Primitive({
+            //     geometryInstances: polyLines,
+            //     appearance: new Cesium.PerInstanceColorAppearance() //使用PerInstanceColorAppearance不同颜色来遮蔽每个实例
+            // }));
 
 
         } else {
@@ -662,9 +661,10 @@
             var billboard = billboards.get(i);
             billboard.show = !billboard.show;
         }
-        polyLines.forEach(function (polyLine) {
-            polyLine.polyline.show.setValue(!polyLine.polyline.show.getValue());
-        })
+        for (var i = 0; i < polyLines.length; i++) {
+            var polyLine = polyLines[i];
+            polyLine.show = !polyLine.show;
+        }
     };
 
 
