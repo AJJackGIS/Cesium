@@ -6,6 +6,9 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
     <title>综合应用</title>
+    <!--<script type="text/javascript" src="http://172.29.1.151:8080/libs/Cesium/1.40/Build/Cesium/Cesium.js"></script>-->
+    <!--<link rel="stylesheet" href="http://172.29.1.151:8080/libs/Cesium/1.40/Build/Cesium/Widgets/widgets.css"-->
+    <!--type="text/css"/>-->
     <link rel="stylesheet" href="../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">
     <script src="../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>
     <script type="text/javascript" src="../libs/jquery/jquery-3.2.1.min.js"></script>
@@ -104,6 +107,12 @@
     浏览：
     <button class="cesium-button" id="rotateTileSet">围绕模型旋转</button>
     <button class="cesium-button" id="flyToPath">指定路径飞行</button>
+
+    <br> <br>
+
+    标注：
+    <button class="cesium-button" id="addLocation">添加标注</button>
+    <button class="cesium-button" id="removeLocation">移除标注</button>
 </div>
 
 <script>
@@ -350,7 +359,7 @@
         }
         heading = Cesium.Math.toDegrees(heading);
         // 重新放置模型，防止模型飘在空中
-        var position = Cesium.Cartesian3.fromDegrees(longitude, latitude, height - 10);
+        var position = Cesium.Cartesian3.fromDegrees(longitude, latitude, height - 8);
         var mat = Cesium.Transforms.eastNorthUpToFixedFrame(position);
         var rotationX = Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationZ(Cesium.Math.toRadians(heading)));
         Cesium.Matrix4.multiply(mat, rotationX, mat);
@@ -465,7 +474,198 @@
 
     };
 
+    var billboards = new Cesium.BillboardCollection();
+    var polyLines = [];
+
     // 其他地物
+    document.getElementById('addLocation').onclick = function () {
+        var entity = null;
+        var entity2 = null;
+        // 获取鼠标所在的经纬度
+        viewer.screenSpaceEventHandler.setInputAction(function (clickEvent) {
+            var feature = viewer.scene.pick(clickEvent.position);
+            if (Cesium.defined(feature) && feature.primitive instanceof Cesium.Billboard) {
+                var cartesian = feature.primitive.position; // 坐标
+
+                // 计算 cartesian 的 偏移 坐标
+                // var cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                // var offset = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, 100);
+                // var translation = Cesium.Cartesian3.subtract(offset, cartesian, new Cesium.Cartesian3());
+
+                // viewer.flyTo({
+                //     destination: viewer.camera.position,
+                //     orientation: {
+                //         heading: 0,
+                //         pitch: -0.5,
+                //         roll: 0.0
+                //     },
+                //     complete: function () {
+                //         viewer.camera.flyTo({
+                //             destination: cartesian,
+                //             orientation: {
+                //                 heading: 0,
+                //                 pitch: -0.5,
+                //                 roll: 0.0
+                //             }
+                //             // easingFunction: Cesium.EasingFunction.QUADRATIC_OUT
+                //         });
+                //     }
+                // })
+
+
+                if (entity) {
+                    viewer.entities.remove(entity);
+                    viewer.entities.remove(entity2);
+                }
+                entity = new Cesium.Entity({
+                    position: cartesian,
+                    point: {
+                        color: Cesium.Color.WHITE.withAlpha(0.01)
+                    }
+                });
+                viewer.entities.add(entity);
+
+                entity2 = new Cesium.Entity({
+                    position: viewer.camera.position,
+                    point: {
+                        color: Cesium.Color.WHITE.withAlpha(0.01)
+                    }
+                });
+                viewer.entities.add(entity2);
+
+                viewer.flyTo(entity2, {
+                    duration: 1.5,
+                    offset: {
+                        heading: viewer.camera.heading,
+                        pitch: viewer.camera.pitch,
+                        range: 100
+                    }
+                }).then(function () {
+                    viewer.flyTo(entity, {
+                        offset: {
+                            // heading: 0,
+                            // pitch: -0.5,
+                            heading: viewer.camera.heading,
+                            pitch: viewer.camera.pitch,
+                            range: 100
+                        }
+                    }).then(function () {
+                        // 显示属性面板(infoBox = true)
+                        var selelctEntity = new Cesium.Entity();
+                        selelctEntity.name = feature.primitive.id;
+                        selelctEntity.description = "<table class='cesium-infoBox-defaultTable'><tbody>啦啦啦啦啦</tbody></table>";
+                        viewer.selectedEntity = selelctEntity;
+                    });
+                });
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+        if (polyLines.length == 0) {
+
+            var locations = [
+                {x: 114.46695214322258, y: 30.441969757349320, z: 51.19389700188276, icon: '楼栋'},
+                {x: 114.46631059011906, y: 30.441988367975895, z: 51.42412227539108, icon: '楼栋'},
+                {x: 114.46554708930454, y: 30.441978312219074, z: 51.74262600486980, icon: '楼栋'},
+                {x: 114.46489004320618, y: 30.441987847224380, z: 51.96766107908809, icon: '楼栋'},
+                {x: 114.46316648164994, y: 30.441989454209885, z: 52.34406454521102, icon: '楼栋'},
+                {x: 114.46252426246670, y: 30.441970196882530, z: 52.51702090355738, icon: '楼栋'},
+                {x: 114.46174164635141, y: 30.442016824437932, z: 52.55876933227419, icon: '楼栋'},
+                {x: 114.46102618287257, y: 30.442008433667013, z: 52.80392615030315, icon: '楼栋'},
+                {x: 114.46418212820147, y: 30.44217549157689, z: 1.5848703462824532, icon: '停车场'},
+                {x: 114.46625636442106, y: 30.44217241398765, z: 0.8567552485253941, icon: '停车场'},
+                {x: 114.46530004753026, y: 30.44221858907332, z: 5.6596055137080050, icon: '停车场'},
+                {x: 114.46213489868616, y: 30.43957600039646, z: 2.5354283463980530, icon: '停车场'},
+                {x: 114.46314785863298, y: 30.43959678075639, z: 2.7271382309218386, icon: '停车场'},
+                {x: 114.46446149597948, y: 30.43958720018533, z: 2.3312105716382425, icon: '停车场'},
+                {x: 114.46400550294000, y: 30.441593808008864, z: 28.440942773800305, icon: '办公室'},
+                {x: 114.46283575389361, y: 30.440512079160232, z: 2.7172855917788037, icon: '篮球场'},
+                {x: 114.46522496825663, y: 30.440860409619166, z: 23.109577724081180, icon: '食堂'},
+                {x: 114.46271945525697, y: 30.441047504710603, z: 29.473511361908060, icon: '宿舍'},
+                {x: 114.46393208306895, y: 30.441068039304330, z: 25.205505877119485, icon: '宿舍'},
+                {x: 114.46397468741692, y: 30.440616656292047, z: 29.030040049278856, icon: '宿舍'}
+            ];
+
+            var instances = [];
+            locations.forEach(function (point) {
+
+                var basePoint = point;
+                var extractPoint = {x: basePoint.x, y: basePoint.y, z: basePoint.z + 20};
+
+                // polyLines.push(viewer.entities.add({
+                //     // name: 'Red line on the surface',
+                //     polyline: {
+                //         positions: Cesium.Cartesian3.fromDegreesArrayHeights([basePoint.x, basePoint.y, basePoint.z, extractPoint.x, extractPoint.y, extractPoint.z]),
+                //         width: 2,
+                //
+                //         // material: Cesium.Color.RED // 普通样式
+                //
+                //         material: new Cesium.PolylineGlowMaterialProperty({
+                //             glowPower: 0.2, // 发光的宽度 为 线的 倍数
+                //             color: Cesium.Color.RED
+                //         }) // 发光样式
+                //
+                //         // material: new Cesium.PolylineOutlineMaterialProperty({
+                //         //     color: Cesium.Color.ORANGE,
+                //         //     outlineWidth: 2,
+                //         //     outlineColor: Cesium.Color.RED
+                //         // }) // 线的边框线
+                //
+                //
+                //     }
+                // }));
+
+
+                var polyLine = new Cesium.SimplePolylineGeometry({
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights([basePoint.x, basePoint.y, basePoint.z, extractPoint.x, extractPoint.y, extractPoint.z])
+                });
+
+                var geometry = Cesium.SimplePolylineGeometry.createGeometry(polyLine);
+
+                instances.push(new Cesium.GeometryInstance({
+                    id: Cesium.createGuid(),
+                    geometry: geometry,
+                    attributes: {
+                        color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.RED.withAlpha(0.6))
+                        // color: Cesium.Color.RED.withAlpha(0.6)
+                        // width: 10
+                    }
+                }));
+
+                billboards.add({
+                    id: Cesium.createGuid(),
+                    position: Cesium.Cartesian3.fromDegrees(extractPoint.x, extractPoint.y, extractPoint.z),
+                    image: './images/' + point.icon + '.png',
+                    width: 24,
+                    height: 24,
+                    horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                    scaleByDistance: new Cesium.NearFarScalar(500, 1.0, 10000, 0.0)
+                });
+            });
+
+            viewer.scene.primitives.add(billboards);
+
+            viewer.scene.primitives.add(new Cesium.Primitive({
+                geometryInstances: instances,
+                appearance: new Cesium.PerInstanceColorAppearance() //使用PerInstanceColorAppearance不同颜色来遮蔽每个实例
+            }));
+
+
+        } else {
+            document.getElementById('removeLocation').click();
+        }
+    }
+    ;
+
+    document.getElementById('removeLocation').onclick = function () {
+        for (var i = 0; i < billboards.length; i++) {
+            var billboard = billboards.get(i);
+            billboard.show = !billboard.show;
+        }
+        polyLines.forEach(function (polyLine) {
+            polyLine.polyline.show.setValue(!polyLine.polyline.show.getValue());
+        })
+    };
 
 
 </script>
