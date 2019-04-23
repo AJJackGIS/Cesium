@@ -107,22 +107,46 @@
     浏览：
     <button class="cesium-button" id="rotateTileSet">围绕模型旋转</button>
     <button class="cesium-button" id="flyToPath">指定路径飞行</button>
+    <button class="cesium-button" id="flyStart">开始飞行</button>
+    <button class="cesium-button" id="flyPause">暂停飞行</button>
+    <button class="cesium-button" id="flyCancel">结束飞行</button>
 
     <br> <br>
 
     标注：
     <button class="cesium-button" id="addLocation">添加标注</button>
     <button class="cesium-button" id="removeLocation">移除标注</button>
+
+    <button class="cesium-button" id="addPath">动态线</button>
 </div>
 
 <script>
 
+    // token
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwMDVjODczYy1kMzkxLTQ1OGUtYjAwOS01MDRlN2QzOTExYTgiLCJpZCI6NTM3Mywic2NvcGVzIjpbImFzciIsImdjIl0sImlhdCI6MTU0MzE5NzM1NH0.RqX0BJWiIngpnINQpX5S7-4Gb16v85X2PPl6DfnGvCw';
 
     // homebutton默认跳转位置
     Cesium.Camera.DEFAULT_VIEW_RECTANGLE = Cesium.Rectangle.fromDegrees(89.5, 20.4, 110.4, 61.2);
 
+    // 默认日期格式
+    Cesium.AnimationViewModel.defaultDateFormatter = function (date, viewModel) {
+        date = Cesium.JulianDate.addHours(date, 8, new Cesium.JulianDate());
+        var gregorianDate = Cesium.JulianDate.toGregorianDate(date);
+        var millisecond = Math.round(gregorianDate.millisecond);
+        return Cesium.sprintf("%04d-%02d-%02d", gregorianDate.year, gregorianDate.month, gregorianDate.day);
+    };
+
+    // 默认时间格式
+    Cesium.AnimationViewModel.defaultTimeFormatter = function (date) {
+        date = Cesium.JulianDate.addHours(date, 8, new Cesium.JulianDate());
+        var gregorianDate = Cesium.JulianDate.toGregorianDate(date);
+        var millisecond = Math.round(gregorianDate.millisecond);
+        return Cesium.sprintf("%02d:%02d:%02d", gregorianDate.hour, gregorianDate.minute, gregorianDate.second);
+    };
+
     var viewer = new Cesium.Viewer('cesiumContainer', {
+        animation: true,
+        timeline: true,
         selectionIndicator: false,
         baseLayerPicker: false,
         vrButton: false,
@@ -136,26 +160,8 @@
         })
     });
     viewer.homeButton.viewModel.tooltip = '返回初始视角';
-
-    // 默认home位置
-
-    // 有Cesium3DTileset的情况下
-    // var tileset_url = "";
-    // var tileset = new Cesium.Cesium3DTileset({
-    //     url: tileset_url
-    // });
-    // tileset.readyPromise.then(function (tileset) {
-    //     viewer.scene.primitives.add(tileset);
-    //     var default_HeadingPitchRange = new Cesium.HeadingPitchRange(0.0, -0.5, tileset.boundingSphere.radius * 2.0);
-    //     viewer.zoomTo(tileset, default_HeadingPitchRange);
-    //     // overwrite homebutton
-    //     viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function (e) {
-    //         e.cancel = true;
-    //         viewer.zoomTo(tileset, default_HeadingPitchRange);
-    //     });
-    // }).otherwise(function (error) {
-    //     console.log(error);
-    // });
+    viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK;
+    viewer.animation.viewModel.playRealtimeViewModel.tooltip = "实时";
 
     // 底图切换
     function changeImagery(code) {
@@ -308,24 +314,6 @@
         measureTool.destroy();
     };
 
-    // 倾斜数据
-    // var tileSet = new Cesium.Cesium3DTileset({
-    //     url: 'http://localhost:90/b3dm/tileset.json'
-    // });
-    //
-    // tileSet.readyPromise.then(function (tileset) {
-    //     viewer.scene.primitives.add(tileset);
-    //     var default_HeadingPitchRange = new Cesium.HeadingPitchRange(0.0, -0.5, tileset.boundingSphere.radius * 2.0);
-    //     viewer.zoomTo(tileset, default_HeadingPitchRange);
-    //     // overwrite homebutton
-    //     viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function (e) {
-    //         e.cancel = true;
-    //         viewer.zoomTo(tileset, default_HeadingPitchRange);
-    //     });
-    // }).otherwise(function (error) {
-    //     console.log(error);
-    // });
-
     var tileset = new Cesium.Cesium3DTileset({
         url: 'http://localhost:90/fhsq/tileset.json'
     });
@@ -462,17 +450,191 @@
     });
 
     // 飞行
+    var rotateTickListener;
     document.getElementById('rotateTileSet').onclick = function () {
-        var heading = 0;
-        viewer.clock.onTick.addEventListener(function () {
-            heading += 0.005;
-            viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(longitude, latitude), new Cesium.HeadingPitchRange(heading, -0.5, 800));
+        if (rotateTickListener) {
+            viewer.clock.onTick.removeEventListener(rotateTickListener);
+            rotateTickListener = null;
+        } else {
+            var heading = 0;
+            rotateTickListener = function () {
+                heading += 0.005;
+                viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(longitude, latitude), new Cesium.HeadingPitchRange(heading, -0.5, 800));
+            };
+            viewer.clock.onTick.addEventListener(rotateTickListener);
+        }
+    };
+
+    var flyTickListener;
+    var entityFly;
+    var stopPoints = [];
+    document.getElementById('flyToPath').onclick = function () {
+        // 一系列坐标，轨迹回溯
+        var coordinates = [
+            new Cesium.Cartesian3(-2278814.399065058, 5009577.431279294, 3212818.6876790584),
+            new Cesium.Cartesian3(-2279246.318552219, 5009524.430725114, 3212596.433207419),
+            new Cesium.Cartesian3(-2278576.129865876, 5009738.490698144, 3212737.099523998),
+            new Cesium.Cartesian3(-2279385.79486611, 5009130.165813898, 3213108.7521299664),
+            new Cesium.Cartesian3(-2278820.3541084616, 5009184.725562073, 3213422.6464043288),
+            new Cesium.Cartesian3(-2278305.1735304976, 5009463.158475737, 3213354.362836111),
+            new Cesium.Cartesian3(-2277861.744713071, 5009653.429232776, 3213371.9858737304),
+            new Cesium.Cartesian3(-2278255.986038674, 5009222.454437604, 3213761.7040034155),
+            new Cesium.Cartesian3(-2278847.2288608355, 5008895.749021577, 3213851.125618587),
+            new Cesium.Cartesian3(-2278712.776085028, 5008654.5110044, 3214319.2164258035),
+            new Cesium.Cartesian3(-2278067.385216183, 5008930.6602660315, 3214346.2037222297),
+            new Cesium.Cartesian3(-2277465.2369472734, 5009339.237204303, 3214137.5782971308),
+            new Cesium.Cartesian3(-2277172.7646593596, 5009741.375524977, 3213720.8270422327),
+            new Cesium.Cartesian3(-2277334.6183587965, 5009987.627524026, 3213225.559331018),
+            new Cesium.Cartesian3(-2277607.774778658, 5010176.254779681, 3212741.0644657877),
+            new Cesium.Cartesian3(-2277972.104975768, 5010172.927652256, 3212489.634000214),
+            new Cesium.Cartesian3(-2278547.4262769036, 5010120.043477857, 3212166.2674153005),
+            new Cesium.Cartesian3(-2279219.9341420266, 5010124.812186923, 3211684.9217441427),
+            new Cesium.Cartesian3(-2279630.189809366, 5010026.6631750185, 3211547.7770167207),
+            new Cesium.Cartesian3(-2280193.619436542, 5009796.085611689, 3211507.7544278116),
+            new Cesium.Cartesian3(-2280506.6196803683, 5009496.385128121, 3211751.3613215336),
+            new Cesium.Cartesian3(-2281184.407336328, 5008811.671412172, 3212333.9353577364),
+            new Cesium.Cartesian3(-2281892.632669765, 5008023.255897599, 3213055.2261898774),
+            new Cesium.Cartesian3(-2281790.413705211, 5007502.131213762, 3213933.945181242),
+            new Cesium.Cartesian3(-2280908.9408634175, 5007735.241795981, 3214194.6778188944),
+            new Cesium.Cartesian3(-2280093.316085923, 5007399.703796857, 3215288.5994740757),
+            new Cesium.Cartesian3(-2279988.383477536, 5006275.572195156, 3217100.7751088985),
+            new Cesium.Cartesian3(-2278541.72121321, 5006553.301432975, 3217689.491345996),
+            new Cesium.Cartesian3(-2276930.3627152666, 5007642.157545581, 3217139.4139879555),
+            new Cesium.Cartesian3(-2276116.6750076637, 5008474.792048412, 3216423.7976077516),
+            new Cesium.Cartesian3(-2275610.9567215145, 5009274.30222287, 3215542.388625435),
+            new Cesium.Cartesian3(-2275969.7887259447, 5009954.151785998, 3214237.784987524),
+            new Cesium.Cartesian3(-2276364.678012266, 5010311.42338982, 3213406.7469479153),
+            new Cesium.Cartesian3(-2277219.820648378, 5010931.104535895, 3211844.7405342567),
+            new Cesium.Cartesian3(-2278277.0415946255, 5011198.507983366, 3210685.3930615555),
+            new Cesium.Cartesian3(-2279526.797238426, 5011012.836371312, 3210092.0624241927),
+            new Cesium.Cartesian3(-2280572.0825597155, 5010607.241451864, 3209983.46979991),
+            new Cesium.Cartesian3(-2282040.800398487, 5009784.7102949, 3210221.8718184945),
+            new Cesium.Cartesian3(-2282978.5716975965, 5008828.134997772, 3211042.1322826534),
+            new Cesium.Cartesian3(-2283401.5405985545, 5007739.914010118, 3212429.0393125047),
+            new Cesium.Cartesian3(-2283516.8038346004, 5006795.655069379, 3213809.3381478554),
+            new Cesium.Cartesian3(-2283266.4486269765, 5006167.855842617, 3214957.25986573),
+            new Cesium.Cartesian3(-2282516.1912376457, 5005499.226913488, 3216520.1747701704),
+            new Cesium.Cartesian3(-2281329.4766383823, 5005116.752921678, 3217947.3159691053),
+            new Cesium.Cartesian3(-2280500.39298819, 5004973.560841627, 3218752.1665377333),
+            new Cesium.Cartesian3(-2278818.409786071, 5005481.687855319, 3219150.564936831),
+            new Cesium.Cartesian3(-2276121.800414797, 5006686.241504972, 3219184.9242035896),
+            new Cesium.Cartesian3(-2274520.249742234, 5008158.787610572, 3218033.9125775523),
+            new Cesium.Cartesian3(-2274169.1000280213, 5009316.84551009, 3216489.649992541),
+            new Cesium.Cartesian3(-2274586.4199895323, 5010228.132947911, 3214786.234258926),
+            new Cesium.Cartesian3(-2275123.194054834, 5011023.251087488, 3213177.5529129896),
+            new Cesium.Cartesian3(-2276180.2855540286, 5011908.317237712, 3211062.0510419565),
+            new Cesium.Cartesian3(-2277911.659715632, 5011810.920353331, 3209993.3303477536),
+            new Cesium.Cartesian3(-2279891.2672096337, 5011618.88670769, 3208894.9581496683),
+            new Cesium.Cartesian3(-2281539.3578455294, 5010975.520445085, 3208729.4318526518),
+            new Cesium.Cartesian3(-2283708.9788608435, 5009831.26551533, 3208971.112084065)
+        ];
+
+        var start = Cesium.JulianDate.fromDate(new Date());
+        var stop = Cesium.JulianDate.addSeconds(start, 3000 / coordinates.length * (coordinates.length - 1), new Cesium.JulianDate()); // 设置总时长360秒
+
+        viewer.clock.startTime = start.clone();
+        viewer.clock.stopTime = stop.clone();
+        viewer.clock.currentTime = start.clone();
+        viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
+        viewer.clock.multiplier = 5; // 10倍速率播放
+
+        viewer.timeline.zoomTo(start, stop);
+
+        function computeCircularTrack() {
+
+            var property = new Cesium.SampledPositionProperty();
+
+            for (var i = 0; i < coordinates.length; i++) {
+                var time = Cesium.JulianDate.addSeconds(start, 3000 / coordinates.length * i, new Cesium.JulianDate());
+                var position = coordinates[i];
+                property.addSample(time, position);
+                stopPoints.push(viewer.entities.add({
+                        position: position,
+                        point: {
+                            pixelSize: 6,
+                            color: Cesium.Color.YELLOW,
+                            outlineColor: Cesium.Color.YELLOW,
+                            outlineWidth: 3
+                        },
+                        label: {
+                            text: '第' + (i + 1) + "个站点",
+                            font: '12pt sans-serif',
+                            style: Cesium.LabelStyle.FILL_AND_OUTLINE, //FILL  FILL_AND_OUTLINE OUTLINE
+                            fillColor: Cesium.Color.RED,
+                            outlineColor: Cesium.Color.WHITE,
+                            outlineWidth: 4,
+                            horizontalOrigin: Cesium.HorizontalOrigin.LEFT, // CENTER LEFT RIGHT
+                            verticalOrigin: Cesium.VerticalOrigin.BOTTOM, //BASELINE BOTTOM CENTER TOP
+                            pixelOffset: new Cesium.Cartesian2(10, -10) //指定像素偏移量的属性
+                        }
+                    })
+                );
+            }
+
+            return property;
+        }
+
+        var position = computeCircularTrack();
+
+        entityFly = viewer.entities.add({
+
+            availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                start: start,
+                stop: stop
+            })]),
+            position: position,
+            orientation: new Cesium.VelocityOrientationProperty(position),
+            model: {
+                uri: '../models/Cesium_Man.glb',
+                minimumPixelSize: 32
+            },
+            path: {
+                resolution: 1,
+                material: new Cesium.PolylineGlowMaterialProperty({
+                    glowPower: 0.5,
+                    color: Cesium.Color.YELLOW
+                }),
+                width: 4
+            }
         });
 
-    };
-    document.getElementById('flyToPath').onclick = function () {
+        entityFly.position.setInterpolationOptions({
+            interpolationDegree: 2,
+            interpolationAlgorithm: Cesium.HermitePolynomialApproximation
+        });
 
+        viewer.animation.viewModel.pauseViewModel.command();
+    }
+    ;
+
+    document.getElementById('flyStart').onclick = function () {
+        flyTickListener = function () {
+            // 中心
+            var center = entityFly.position.getValue(viewer.clock.currentTime);
+            // 当前位置的旋转矩阵
+            var orientation = entityFly.orientation.getValue(viewer.clock.currentTime);
+            // 设置camera的坐标系
+            var transform = Cesium.Transforms.eastNorthUpToFixedFrame(center);
+            transform = Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromQuaternion(orientation), center);
+            viewer.camera.lookAtTransform(transform, new Cesium.Cartesian3(-1200.0, 0, 800.0));
+        };
+        viewer.clock.onTick.addEventListener(flyTickListener);
+        viewer.animation.viewModel.pauseViewModel.command();
     };
+    document.getElementById('flyPause').onclick = function () {
+        viewer.animation.viewModel.pauseViewModel.command();
+        var button = document.getElementById('flyPause');
+        button.textContent = button.textContent == "继续飞行" ? "暂停飞行" : "继续飞行";
+    };
+    document.getElementById('flyCancel').onclick = function () {
+        viewer.clock.onTick.removeEventListener(flyTickListener);
+        viewer.animation.viewModel.pauseViewModel.command();
+        viewer.entities.remove(entityFly);
+        stopPoints.forEach(function (stop) {
+            viewer.entities.remove(stop);
+        })
+    };
+
 
     var billboards = new Cesium.BillboardCollection();
     var polyLines = [];
@@ -665,6 +827,29 @@
             var polyLine = polyLines[i];
             polyLine.show = !polyLine.show;
         }
+    };
+
+    // 动态线 == 模拟实时路线，轨迹
+    document.getElementById('addPath').onclick = function () {
+        var positions = [
+        ];
+        var dynamicPositions = new Cesium.CallbackProperty(function () {
+            return positions;
+        }, false);
+        viewer.entities.add({
+            polyline: {
+                positions: dynamicPositions,
+                width: 10,
+                clampToGround: true,
+                material: new Cesium.PolylineArrowMaterialProperty(Cesium.Color.RED)
+            }
+        });
+
+        // 获取鼠标所在的经纬度
+        viewer.screenSpaceEventHandler.setInputAction(function (clickEvent) {
+            var cartesian = viewer.scene.globe.pick(viewer.camera.getPickRay(clickEvent.position), viewer.scene);
+            positions.push(cartesian);
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
     };
 
 
