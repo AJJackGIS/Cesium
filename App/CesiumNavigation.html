@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>Cesium-Navigation Example (standalone)</title>
+    <link rel="stylesheet" href="../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<script src="../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>
+<script src="viewerCesiumNavigationMixin.min.js"></script>
+<script src="SpirographPositionProperty.js"></script>
+<script>
+    var cesiumViewer = new Cesium.Viewer('cesiumContainer');
+
+    // extend our view by the cesium navigation mixin
+    cesiumViewer.extend(Cesium.viewerCesiumNavigationMixin, {});
+
+    // you can access the cesium navigation by cesiumViewer.cesiumNavigation or cesiumViewer.cesiumWidget.cesiumNavigation
+
+    function createSpirographEntity(url, longitude, latitude, height, radiusMedian, radiusSubCircle, durationMedianCircle, durationSubCircle) {
+        var centerPosition = Cesium.Cartographic.fromDegrees(longitude, latitude, height);
+        var spirographPositionProperty = new Cesium.SpirographPositionProperty(centerPosition, radiusMedian, radiusSubCircle,
+            durationMedianCircle, durationSubCircle, cesiumViewer.scene.globe.ellipsoid);
+
+        cesiumViewer.entities.add({
+            name: url,
+            description: 'It is supposed to have a useful desciption here<br />but instead there is just a placeholder to get a larger info box',
+            position: spirographPositionProperty,
+            orientation: new Cesium.VelocityOrientationProperty(spirographPositionProperty, cesiumViewer.scene.globe.ellipsoid),
+            model: {
+                uri: url,
+                minimumPixelSize: 96
+            },
+            path: {
+                show: true,
+                resolution: 1,
+                width: 4,
+                material: Cesium.Color.fromRandom({alpha: 0.8})
+            }
+        });
+    }
+
+    // createSpirographEntity('../models/Cesium_Air.glb', -100, 44, 10000.0, Cesium.Math.toRadians(0.5), Cesium.Math.toRadians(2), 1e6, 2e5);
+    createSpirographEntity('models/Cesium_Ground.glb', -122, 45, 0,Cesium.Math.toRadians(0.1), Cesium.Math.toRadians(1), 5e6, 7e5);
+</script>
+
+</body>
+</html>
