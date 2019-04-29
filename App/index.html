@@ -51,11 +51,26 @@
             border-radius: 8px;
             display: none;
         }
+
+        .cesium-viewer .cesium-widget-credits {
+            display: none;
+        }
+
+        .compass {
+            top: 10px!important;
+        }
+
+        .navigation-controls {
+            top: 120px!important;
+            background-color: #3e4144;
+        }
     </style>
     <script src="CesiumMeasure.min.js"></script>
     <script src="CesiumMeasure.js"></script>
     <script src="moment.js"></script>
     <script src="../utils/coorTransform.js"></script>
+    <!--<script src="navigation.js"></script>-->
+    <script src="viewerCesiumNavigationMixin.min.js"></script>
 
 </head>
 
@@ -152,9 +167,12 @@
         timeline: true,
         selectionIndicator: false,
         baseLayerPicker: false,
+        fullscreenButton:false,
         vrButton: false,
         geocoder: false,
+        homeButton: false,
         sceneModePicker: false,
+        creditContainer: null,
         // infoBox: false,
         navigationHelpButton: false,
         // 底图
@@ -162,9 +180,21 @@
             url: 'http://www.google.cn/maps/vt?lyrs=y@716&x={x}&y={y}&z={z}'
         })
     });
-    viewer.homeButton.viewModel.tooltip = '返回初始视角';
+    // viewer.homeButton.viewModel.tooltip = '返回初始视角';
     viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK;
-    viewer.animation.viewModel.playRealtimeViewModel.tooltip = "实时";
+    // viewer.animation.viewModel.playRealtimeViewModel.tooltip = "实时";
+    viewer.animation.container.style.display = "none";
+    viewer.timeline.container.style.display = "none";
+
+    var options = {
+        defaultResetView: Cesium.Rectangle.fromDegrees(80, 22, 130, 50), // 用于在使用重置导航重置地图视图时设置默认视图控制。接受的值是Cesium.Cartographic 和 Cesium.Rectangle.
+        enableCompass: true, // 用于启用或禁用罗盘。true是启用罗盘，false是禁用罗盘。默认值为true。如果将选项设置为false，则罗盘将不会添加到地图中。
+        enableZoomControls: true,  // 用于启用或禁用缩放控件。true是启用，false是禁用。默认值为true。如果将选项设置为false，则缩放控件将不会添加到地图中。
+        enableDistanceLegend: true,// 用于启用或禁用距离图例。true是启用，false是禁用。默认值为true。如果将选项设置为false，距离图例将不会添加到地图中。
+        enableCompassOuterRing: true // 用于启用或禁用指南针外环。true是启用，false是禁用。默认值为true。如果将选项设置为false，则该环将可见但无效。
+    };
+    // Cesium.viewerCesiumNavigationMixin(viewer, options);
+    viewer.extend(Cesium.viewerCesiumNavigationMixin, options);
 
     // 底图切换
     function changeImagery(code) {
@@ -180,7 +210,8 @@
             case 2:
                 viewer.imageryLayers.addImageryProvider(
                     new Cesium.UrlTemplateImageryProvider({
-                        url: "http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}"
+                        // url: "http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}" // 无偏移的
+                        url: "http://www.google.cn/maps/vt?lyrs=y@189&x={x}&y={y}&z={z}&gl=cn" // 有偏移的
                     })
                 );
                 break;
