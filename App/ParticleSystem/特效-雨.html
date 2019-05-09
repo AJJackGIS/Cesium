@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>特效雨</title>
+    <link rel="stylesheet" href="../../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">
+    <script src="../../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<script>
+    // token
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwMDVjODczYy1kMzkxLTQ1OGUtYjAwOS01MDRlN2QzOTExYTgiLCJpZCI6NTM3Mywic2NvcGVzIjpbImFzciIsImdjIl0sImlhdCI6MTU0MzE5NzM1NH0.RqX0BJWiIngpnINQpX5S7-4Gb16v85X2PPl6DfnGvCw';
+
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+        shouldAnimate: true,
+        terrainProvider: Cesium.createWorldTerrain()
+    });
+    var scene = viewer.scene;
+    scene.globe.depthTestAgainstTerrain = true;
+
+    scene.camera.setView({
+        destination : new Cesium.Cartesian3(277096.634865404, 5647834.481964232, 2985563.7039122293),
+        orientation : {
+            heading : 4.731089976107251,
+            pitch : -0.32003481981370063
+        }
+    });
+
+    // rain
+    var rainParticleSize = scene.drawingBufferWidth / 80.0;
+    var rainRadius = 100000.0;
+    var rainImageSize = new Cesium.Cartesian2(rainParticleSize, rainParticleSize * 2.0);
+
+    var rainSystem;
+
+    var rainGravityScratch = new Cesium.Cartesian3();
+    var rainUpdate = function(particle, dt) {
+        rainGravityScratch = Cesium.Cartesian3.normalize(particle.position, rainGravityScratch);
+        rainGravityScratch = Cesium.Cartesian3.multiplyByScalar(rainGravityScratch, -1050.0, rainGravityScratch);
+
+        particle.position = Cesium.Cartesian3.add(particle.position, rainGravityScratch, particle.position);
+
+        var distance = Cesium.Cartesian3.distance(scene.camera.position, particle.position);
+        if (distance > rainRadius) {
+            particle.endColor.alpha = 0.0;
+        } else {
+            particle.endColor.alpha = rainSystem.endColor.alpha / (distance / rainRadius + 0.1);
+        }
+    };
+
+    rainSystem = new Cesium.ParticleSystem({
+        modelMatrix : new Cesium.Matrix4.fromTranslation(scene.camera.position),
+        speed : -1.0,
+        lifetime : 15.0,
+        emitter : new Cesium.SphereEmitter(rainRadius),
+        startScale : 1.0,
+        endScale : 0.0,
+        image : 'circular_particle.png',
+        emissionRate : 9000.0,
+        startColor :new Cesium.Color(0.27, 0.5, 0.70, 0.0),
+        endColor : new Cesium.Color(0.27, 0.5, 0.70, 0.98),
+        imageSize : rainImageSize,
+        updateCallback : rainUpdate
+    });
+    scene.primitives.add(rainSystem);
+
+    scene.skyAtmosphere.hueShift = -0.97;
+    scene.skyAtmosphere.saturationShift = 0.25;
+    scene.skyAtmosphere.brightnessShift = -0.4;
+
+    scene.fog.density = 0.00025;
+    scene.fog.minimumBrightness = 0.01;
+
+</script>
+</body>
+</html>

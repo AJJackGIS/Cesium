@@ -11,8 +11,14 @@ function onload(Cesium) {
     viewer = new Cesium.Viewer('cesiumContainer', {
         imageryProvider: new Cesium.UrlTemplateImageryProvider({
             url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
-        })
+        }),
+        animation: true,
+        shadows: true,
+        terrainShadows: Cesium.ShadowMode.ENABLED,
     });
+
+    viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK;
+    viewer.scene.globe.enableLighting = true;
 
     // selectedEntity = new Cesium.Entity(); // infoBox需要的Entity
     scene = viewer.scene;
@@ -20,19 +26,19 @@ function onload(Cesium) {
     $('#loadingbar').remove();
     try {
 
-        var abc = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-fozuling3dmax/rest/realspace/datas/test1@dom/config", {name: 'abc'});
+        var abc = scene.open('http://172.29.1.151:8090/iserver/services/3D-FOZHULING/rest/realspace');
 
-        abc.then(function (layer) {
-            layer.selectEnabled = false;
-            layer.hasLight = true; //关闭光照
-            //layer.style3D._fillForeColor.alpha = 1;
-            layer.cullEnabled = false; // 双面渲染
-        });
-
-        Cesium.when(abc, function (layer) {
+        Cesium.when(abc, function (layers) {
             if (!scene.pickPositionSupported) {
                 alert('不支持深度拾取,属性查询功能无法使用！');
             }
+
+            layers.foreach(function (layer) {
+                layer.cullEnabled = true; //双面渲染  关键
+                layer.selectEnabled = false;
+                layer.hasLight = true; //关闭光照  关键
+                layer.style3D._fillForeColor.alpha = 1;
+            });
 
             //设置相机视角
             scene.camera.setView({
@@ -51,29 +57,9 @@ function onload(Cesium) {
             }
         });
 
-        viewer.entities.add({
-            position: Cesium.Cartesian3.fromDegrees(0.0, 0.0, 0.5),
-            point: {
-                color: Cesium.Color.RED,
-                pixelSize: 5,
-                outlineColor: Cesium.Color.WHITE,
-                outlineWidth: 1
-            }
-        });
-
-        viewer.entities.add({
-            position: Cesium.Cartesian3.fromDegrees(114.4369, 30.4443, 0.5),
-            point: {
-                color: Cesium.Color.RED,
-                pixelSize: 10,
-                outlineColor: Cesium.Color.WHITE,
-                outlineWidth: 1
-            }
-        });
-
-        setTimeout(function () {
-            fly();
-        }, 3000);
+        // setTimeout(function () {
+        //     fly();
+        // }, 3000);
 
     } catch (e) {
         if (widget._showRenderLoopErrors) {

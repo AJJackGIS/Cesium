@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>裁剪效果</title>
+    <link rel="stylesheet" href="../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">
+    <script src="../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<script>
+
+    // token
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwMDVjODczYy1kMzkxLTQ1OGUtYjAwOS01MDRlN2QzOTExYTgiLCJpZCI6NTM3Mywic2NvcGVzIjpbImFzciIsImdjIl0sImlhdCI6MTU0MzE5NzM1NH0.RqX0BJWiIngpnINQpX5S7-4Gb16v85X2PPl6DfnGvCw';
+
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        })
+    });
+    var scene = viewer.scene;
+
+    viewer.scene.globe.depthTestAgainstTerrain = true;
+
+    var targetY = 0;
+    var planeEntities = [];
+    var selectedPlane;
+    var clippingPlanes;
+
+    var downHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    downHandler.setInputAction(function (movement) {
+        var pickedObject = scene.pick(movement.position);
+        if (Cesium.defined(pickedObject) &&
+            Cesium.defined(pickedObject.id) &&
+            Cesium.defined(pickedObject.id.plane)) {
+            selectedPlane = pickedObject.id.plane;
+            // selectedPlane.material = Cesium.Color.WHITE.withAlpha(0.05);
+            // selectedPlane.outlineColor = Cesium.Color.WHITE;
+            scene.screenSpaceCameraController.enableInputs = false;
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_DOWN);
+
+    // Release plane on mouse up
+    var upHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    upHandler.setInputAction(function () {
+        if (Cesium.defined(selectedPlane)) {
+            // selectedPlane.material = Cesium.Color.WHITE.withAlpha(0.1);
+            // selectedPlane.outlineColor = Cesium.Color.WHITE;
+            selectedPlane = undefined;
+        }
+
+        scene.screenSpaceCameraController.enableInputs = true;
+    }, Cesium.ScreenSpaceEventType.LEFT_UP);
+
+    // Update plane on mouse move
+    var moveHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    moveHandler.setInputAction(function (movement) {
+        if (Cesium.defined(selectedPlane)) {
+            var deltaY = movement.startPosition.y - movement.endPosition.y;
+            targetY += deltaY;
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+    function createPlaneUpdateFunction(plane) {
+        return function () {
+            plane.distance = targetY +10;
+            return plane;
+        };
+    }
+
+
+    var tileset;
+
+    function change(height) {
+        height = Number(height);
+        if (isNaN(height)) {
+            return;
+        }
+        var cartographic = Cesium.Cartographic.fromCartesian(tileset.boundingSphere.center);
+        var surface = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, 0.0);
+        var offset = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, height);
+        var translation = Cesium.Cartesian3.subtract(offset, surface, new Cesium.Cartesian3());
+        tileset.modelMatrix = Cesium.Matrix4.fromTranslation(translation);
+    };
+
+
+    function loadTileset(url) {
+        clippingPlanes = new Cesium.ClippingPlaneCollection({
+            planes: [
+                new Cesium.ClippingPlane(new Cesium.Cartesian3(0.0, 0.0, -1.0), 0)
+            ],
+            // edgeWidth : viewModel.edgeStylingEnabled ? 1.0 : 0.0
+            edgeWidth: 0.0
+        });
+
+        tileset = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
+            url: url,
+            clippingPlanes: clippingPlanes
+        }));
+
+        tileset.debugShowBoundingVolume = true;
+        return tileset.readyPromise.then(function () {
+
+            var boundingSphere = tileset.boundingSphere;
+            var radius = boundingSphere.radius;
+
+            viewer.zoomTo(tileset, new Cesium.HeadingPitchRange(0.5, -0.2, radius * 4.0));
+
+            for (var i = 0; i < clippingPlanes.length; ++i) {
+                var plane = clippingPlanes.get(i);
+                var planeEntity = viewer.entities.add({
+                    position: boundingSphere.center,
+                    plane: {
+                        dimensions: new Cesium.Cartesian2(radius * 2.5, radius * 2.5),
+                        material: Cesium.Color.RED.withAlpha(0.8),
+                        plane: new Cesium.CallbackProperty(createPlaneUpdateFunction(plane), false),
+                        outline: true,
+                        outlineColor: Cesium.Color.WHITE
+                    }
+                });
+
+                planeEntities.push(planeEntity);
+            }
+            return tileset;
+        }).otherwise(function (error) {
+            console.log(error);
+        });
+    }
+
+    loadTileset("http://localhost:90/fhsq/tileset.json");
+
+</script>
+</body>
+</html>
