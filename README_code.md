@@ -90,3 +90,11 @@
         }
     });
     spheres.show = !spheres.show; // 显示/隐藏
+    
+> 计算点距离某一个平面的距离
+
+    Cesium.Plane.getPointDistance(plane, point) → Number
+    计算点到平面的最短距离。距离决定了该点所在平面的哪一侧。如果距离为正，则该点位于法线方向的半空间中; 如果为负，则该点位于与正常相反的半空间中; 如果为零，则该点在平面上。
+    
+    Cesium.Plane.projectPointOntoPlane(plane, point, result) → Cartesian3
+    计算点在平面上的投影点

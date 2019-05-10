@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>地形坐标查询</title>
+    <link rel="stylesheet" href="http://localhost:90/cesium1.57/Build/Cesium/Widgets/widgets.css">
+    <script src="http://localhost:90/cesium1.57/Build/Cesium/Cesium.js"></script>
+    <script src="https://cdn.bootcss.com/echarts/4.2.1/echarts.js"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        #main {
+            z-index: 1;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: white;
+        }
+    </style>
+
+</head>
+
+<body>
+<div id="cesiumContainer">
+    <div id="main" style="width: 600px;height:400px;display: none"></div>
+</div>
+<script>
+
+    var terrainProvider = Cesium.createWorldTerrain();
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        }),
+        shouldAnimate: true,
+        terrainProvider: terrainProvider
+    });
+
+    // 绘制线
+    var redLine = viewer.entities.add({
+        name: 'Red line on terrain',
+        polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArray([114, 30,
+                115, 30]),
+            width: 5,
+            material: Cesium.Color.RED,
+            clampToGround: true
+        }
+    });
+
+    viewer.zoomTo(redLine);
+
+    var start = Cesium.Cartesian3.fromDegrees(114, 30);
+    var end = Cesium.Cartesian3.fromDegrees(115, 30);
+    // Query the terrain height of two Cartographic positions
+    var positions = [Cesium.Cartographic.fromCartesian(start)];
+
+    var count = 100;
+    for (var i = 1; i < count; i++) {
+        var cart = Cesium.Cartesian3.lerp(start, end, i / count, new Cesium.Cartesian3());
+        positions.push(Cesium.Cartographic.fromCartesian(cart));
+    }
+    positions.push(Cesium.Cartographic.fromCartesian(end));
+
+    // var promise = Cesium.sampleTerrain(terrainProvider, 12, positions);
+    var promise = Cesium.sampleTerrainMostDetailed(terrainProvider, positions);
+    Cesium.when(promise, function (updatedPositions) {
+
+        var height = [];
+        for (var i = 0; i < updatedPositions.length; i++) {
+            height.push(updatedPositions[i].height);
+        }
+        // 绘制高程走势图
+        var dom = document.getElementById('main');
+        dom.style.display = "block";
+        var myChart = echarts.init(dom);
+        var option = {
+            title: {
+                text: '海拔走势图'
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross',
+                    label: {
+                        backgroundColor: '#6a7985'
+                    }
+                }
+            },
+            legend: {
+                data: ['海拔走势图']
+            },
+            toolbox: {
+                feature: {
+                    saveAsImage: {}
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: [
+                {
+                    type: 'category',
+                    boundaryGap: false
+                }
+            ],
+            yAxis: [
+                {
+                    type: 'value'
+                }
+            ],
+            series: [
+                {
+                    name: '海拔走势图',
+                    type: 'line',
+                    stack: '总量',
+                    label: {
+                        normal: {
+                            show: true,
+                            position: 'top'
+                        }
+                    },
+                    areaStyle: {normal: {}},
+                    data: height
+                }
+            ]
+        };
+        myChart.setOption(option);
+    });
+
+</script>
+</body>
+
+</html>
