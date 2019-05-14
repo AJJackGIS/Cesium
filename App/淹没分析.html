@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>淹没分析</title>
+    <link rel="stylesheet" href="../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">
+    <script src="../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+    </style>
+
+</head>
+
+<body>
+<div id="cesiumContainer">
+</div>
+<script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwMDVjODczYy1kMzkxLTQ1OGUtYjAwOS01MDRlN2QzOTExYTgiLCJpZCI6NTM3Mywic2NvcGVzIjpbImFzciIsImdjIl0sImlhdCI6MTU0MzE5NzM1NH0.RqX0BJWiIngpnINQpX5S7-4Gb16v85X2PPl6DfnGvCw';
+
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        }),
+        terrainProvider: Cesium.createWorldTerrain({
+            requestVertexNormals: true,
+            requestWaterMask: true
+        })
+    });
+
+    // viewer.camera.flyTo({
+    //     destination: new Cesium.Cartesian3(-2267365.9077936024, 5026893.279706578, 3202033.0742220455),
+    //     orientation: {
+    //         heading: 6.275940369857615,
+    //         pitch: -0.7210338041102347,
+    //         roll: 6.283157048530953
+    //     }
+    // });
+
+    var positions = [
+        114.2525772592218, 30.36346226508150, 114.2530025377301, 30.35639685778417,
+        114.2510077577825, 30.34781521260932, 114.2518951831324, 30.34476654297517,
+        114.2516076222166, 30.33660879366254, 114.2523388969422, 30.33205816473179,
+        114.2548443196929, 30.33201526283045, 114.2631233965539, 30.33212136772751,
+        114.2725133857777, 30.33439623410857, 114.2801114739173, 30.33477876544668,
+        114.2892038007392, 30.33422629297589, 114.2952386684508, 30.33698869954759,
+        114.2945679499765, 30.34006705014155, 114.2971563868218, 30.34343886751039,
+        114.3029015406719, 30.35596675081650, 114.3072946538022, 30.36689801658419,
+        114.3059222911299, 30.37908115625039, 114.3002732482940, 30.37799587881468,
+        114.2650768544461, 30.37908175505750, 114.2612761607657, 30.37837176236842,
+        114.2554303961646, 30.37848249790553, 114.2525772592218, 30.36346226508150
+    ];
+
+    var waterHeight = 0;
+
+    var entity = viewer.entities.add({
+        polygon: {
+            hierarchy: Cesium.Cartesian3.fromDegreesArray(positions),
+            material: new Cesium.Color.RED.withAlpha(0.5),
+            extrudedHeight: new Cesium.CallbackProperty(function () {
+                return waterHeight;
+            })
+        }
+    });
+
+    viewer.zoomTo(entity);
+
+    viewer.clock.onTick.addEventListener(function () {
+        if (waterHeight > 250){
+            waterHeight = 0;
+        }
+        waterHeight += 0.1;
+    })
+
+</script>
+</body>
+
+</html>
