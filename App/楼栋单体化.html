@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>单体化</title>
+    <link rel="stylesheet" href="../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">
+    <script src="../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+    </style>
+
+</head>
+
+<body>
+<div id="cesiumContainer">
+    <div id="slider"></div>
+</div>
+<script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwMDVjODczYy1kMzkxLTQ1OGUtYjAwOS01MDRlN2QzOTExYTgiLCJpZCI6NTM3Mywic2NvcGVzIjpbImFzciIsImdjIl0sImlhdCI6MTU0MzE5NzM1NH0.RqX0BJWiIngpnINQpX5S7-4Gb16v85X2PPl6DfnGvCw';
+
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        })
+    });
+
+    var tileset = new Cesium.Cesium3DTileset({
+        url: 'http://localhost:90/fhsq/tileset.json'
+    });
+    viewer.scene.primitives.add(tileset);
+
+    tileset.readyPromise.then(function () {
+        viewer.camera.flyToBoundingSphere(tileset.boundingSphere);
+    });
+
+    var positions = [
+        114.46728082961637, 30.441794597761593,
+        114.46666425755467, 30.4417972976433,
+        114.4666723192589, 30.442115111023252,
+        114.46728660201141, 30.44211481806023,
+        114.46728082961637, 30.44179459776159330];
+
+    viewer.entities.add({
+        polygon: {
+            hierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(positions)),
+            material: Cesium.Color.RED.withAlpha(0.5),
+            classificationType: Cesium.ClassificationType.BOTH // 贴地表和贴模型,如果设置了，这不能使用挤出高度
+        }
+    });
+
+</script>
+</body>
+
+</html>

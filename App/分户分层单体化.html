@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>分层分户单体化-适用于有高度</title>
+    <!--<link rel="stylesheet" href="../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">-->
+    <!--<script src="../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>-->
+    <link rel="stylesheet" href="http://localhost:90/cesium1.57/Build/Cesium/Widgets/widgets.css">
+    <script src="http://localhost:90/cesium1.57/Build/Cesium/Cesium.js"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        .tool {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px;
+            z-index: 1;
+            background: rgba(42, 42, 42, 0.8);
+            border-radius: 4px;
+        }
+    </style>
+
+</head>
+
+<body>
+<div id="cesiumContainer">
+</div>
+<div class="tool">
+    高亮显示单体化模型 <input id="showModel" type="checkbox" class="cesium-button"/>
+    透明度 <input id="alphaValue" type="range" min="0.0" max="1.0" step="0.01" value="1">
+</div>
+<script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwMDVjODczYy1kMzkxLTQ1OGUtYjAwOS01MDRlN2QzOTExYTgiLCJpZCI6NTM3Mywic2NvcGVzIjpbImFzciIsImdjIl0sImlhdCI6MTU0MzE5NzM1NH0.RqX0BJWiIngpnINQpX5S7-4Gb16v85X2PPl6DfnGvCw';
+
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        })
+    });
+
+    var tileset = new Cesium.Cesium3DTileset({
+        url: 'http://localhost:90/fhsq/tileset.json'
+    });
+    viewer.scene.primitives.add(tileset);
+
+    tileset.readyPromise.then(function () {
+        viewer.camera.flyToBoundingSphere(tileset.boundingSphere);
+    });
+
+    // 显示在30m到40m的建筑
+    var positions = [
+        Cesium.Cartesian3.fromDegrees(114.46728082961637, 30.441794597761593, 40),
+        Cesium.Cartesian3.fromDegrees(114.46666425755467, 30.4417972976433, 40),
+        Cesium.Cartesian3.fromDegrees(114.4666723192589, 30.442115111023252, 40),
+        Cesium.Cartesian3.fromDegrees(114.46728660201141, 30.44211481806023, 40),
+        Cesium.Cartesian3.fromDegrees(114.46728082961637, 30.44179459776159330, 40)];
+
+    // 创建一个ClassificationPrimitive对象
+    var buildingHighlight = viewer.scene.primitives.add(new Cesium.ClassificationPrimitive({
+        geometryInstances: new Cesium.GeometryInstance({
+            geometry: new Cesium.PolygonGeometry({ // 使用面几何对象
+                perPositionHeight: true,
+                extrudedHeight: 30,
+                polygonHierarchy: new Cesium.PolygonHierarchy(positions)
+            }),
+            attributes: {
+                color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.GREEN.withAlpha(0.5)),
+                show: new Cesium.ShowGeometryInstanceAttribute(true)
+            },
+            id: 'building'
+        }),
+        classificationType: Cesium.ClassificationType.CESIUM_3D_TILE
+    }));
+
+    document.getElementById("showModel").onclick = function (e) {
+        invertClassification(e.target.checked);
+    };
+
+    function invertClassification(checked) {
+        if (!viewer.scene.invertClassificationSupported) {
+            console.log('不支持分类反转');
+        }
+        viewer.scene.invertClassification = checked; // 开启分类效果
+        viewer.scene.invertClassificationColor = new Cesium.Color(0.25, 0.25, 0.25, 1.0); // 设置颜色
+        // buildingHighlight.getGeometryInstanceAttributes('building').show = Cesium.ShowGeometryInstanceAttribute.toValue(!checked); // 根据id获取GeometryInstance的属性，并重新设置show属性
+        buildingHighlight.geometryInstances.attributes.show = Cesium.ShowGeometryInstanceAttribute.toValue(!checked); // 这两种方式都可以，没有设置id的情况下
+    }
+
+    document.getElementById("alphaValue").onchange = function (e) {
+        var alpha = e.target.value;
+        updateAlpha(alpha);
+    };
+
+    function updateAlpha(value) {
+        viewer.scene.invertClassificationColor.alpha = parseFloat(value); // 设置透明度
+    }
+
+    var currentObjectId;
+    var currentPrimitive;
+    var currentColor;
+    var currentShow;
+    var attributes;
+
+    var handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+    handler.setInputAction(function (movement) {
+        var pickedObject = viewer.scene.pick(movement.endPosition);
+        if (Cesium.defined(pickedObject) && Cesium.defined(pickedObject.id)) {  // 适用于GeometryInstance设置了id的情况下， 也可以不对pickedObject.id做判断
+            if (pickedObject.id === currentObjectId) {
+                return; // 如果一开始什么都没选取到，直接返回
+            }
+
+            // 如果选取到了目标，且之前已经选取到了目标对象
+            if (Cesium.defined(currentObjectId)) {
+                attributes = currentPrimitive.getGeometryInstanceAttributes(currentObjectId); // 根据id获取到目标的属性
+                attributes.color = currentColor;
+                attributes.show = currentShow;
+                currentObjectId = undefined;
+                currentPrimitive = undefined;
+                currentColor = undefined;
+                currentShow = undefined;
+            }
+        }
+
+        // 如果选取到了目标
+        if (Cesium.defined(pickedObject) && Cesium.defined(pickedObject.primitive) && Cesium.defined(pickedObject.id)
+                && Cesium.defined(pickedObject.primitive.getGeometryInstanceAttributes)) {
+            currentObjectId = pickedObject.id; // 设置id
+            currentPrimitive = pickedObject.primitive; // 设置primitive
+            attributes = currentPrimitive.getGeometryInstanceAttributes(currentObjectId); // 设置Attributes
+            currentColor = attributes.color; // 设置color --- 存储primitive之前一开始设置的color属性
+            currentShow = attributes.show; // 设置show --- 存储primitive之前一开始设置的show属性
+            if (!viewer.scene.invertClassification) {
+                attributes.color = [255, 0, 255, 128]; // 改变选中的primitive的color
+            }
+            attributes.show = [1];// 改变选中的primitive的show
+        } else if (Cesium.defined(currentObjectId)) {
+            // 如果没有选取到目标，但是已经有存在的目标对象，就是移除目标对象的场景
+            attributes = currentPrimitive.getGeometryInstanceAttributes(currentObjectId);
+            attributes.color = currentColor; // 恢复默认的color
+            attributes.show = currentShow; // 恢复默认的show
+            currentObjectId = undefined;
+            currentPrimitive = undefined;
+            currentColor = undefined;
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+
+</script>
+</body>
+
+</html>
