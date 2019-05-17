@@ -6,10 +6,10 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
     <title>分层分户单体化-适用于有高度</title>
-    <!--<link rel="stylesheet" href="../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">-->
-    <!--<script src="../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>-->
-    <link rel="stylesheet" href="http://localhost:90/cesium1.57/Build/Cesium/Widgets/widgets.css">
-    <script src="http://localhost:90/cesium1.57/Build/Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">
+    <script src="../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>
+    <!--<link rel="stylesheet" href="http://localhost:90/cesium1.57/Build/Cesium/Widgets/widgets.css">-->
+    <!--<script src="http://localhost:90/cesium1.57/Build/Cesium/Cesium.js"></script>-->
     <style>
         html,
         body,
@@ -95,8 +95,8 @@
         }
         viewer.scene.invertClassification = checked; // 开启分类效果
         viewer.scene.invertClassificationColor = new Cesium.Color(0.25, 0.25, 0.25, 1.0); // 设置颜色
-        // buildingHighlight.getGeometryInstanceAttributes('building').show = Cesium.ShowGeometryInstanceAttribute.toValue(!checked); // 根据id获取GeometryInstance的属性，并重新设置show属性
-        buildingHighlight.geometryInstances.attributes.show = Cesium.ShowGeometryInstanceAttribute.toValue(!checked); // 这两种方式都可以，没有设置id的情况下
+        buildingHighlight.getGeometryInstanceAttributes('building').show = Cesium.ShowGeometryInstanceAttribute.toValue(!checked); // 根据id获取GeometryInstance的属性，并重新设置show属性
+        // buildingHighlight.geometryInstances.attributes.show = Cesium.ShowGeometryInstanceAttribute.toValue(!checked); // 这两种方式都可以，没有设置id的情况下
     }
 
     document.getElementById("alphaValue").onchange = function (e) {
