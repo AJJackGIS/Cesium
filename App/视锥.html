@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>视锥</title>
+    <link rel="stylesheet" href="../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">
+    <script src="../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+    </style>
+
+</head>
+
+<body>
+<div id="cesiumContainer">
+</div>
+<script>
+
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwMDVjODczYy1kMzkxLTQ1OGUtYjAwOS01MDRlN2QzOTExYTgiLCJpZCI6NTM3Mywic2NvcGVzIjpbImFzciIsImdjIl0sImlhdCI6MTU0MzE5NzM1NH0.RqX0BJWiIngpnINQpX5S7-4Gb16v85X2PPl6DfnGvCw';
+
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        })
+    });
+
+    viewer.camera.setView({
+        destination: new Cesium.Cartesian3(-2248570.979821336, 5050492.001987805, 3170317.2772213286),
+        orientation: {
+            heading: 0.20320698275486215,
+            pitch: -0.3738718306614248,
+            roll: 0.0006301528341134954
+        }
+    });
+
+    viewer.scene.globe.depthTestAgainstTerrain = true;
+
+    var firstPos = Cesium.Cartesian3.fromDegrees(114, 30, 100);
+    var secondPos = Cesium.Cartesian3.fromDegrees(114, 30, 0);
+
+    var camera = new Cesium.Camera(viewer.scene);
+    camera.position = firstPos;
+    camera.direction = Cesium.Cartesian3.normalize(Cesium.Cartesian3.subtract(secondPos, firstPos, new Cesium.Cartesian3()), new Cesium.Cartesian3());
+    camera.frustum.fov = Cesium.Math.PI / 4;
+    // aspectRatio: viewer.canvas.clientWidth / viewer.canvas.clientHeight,
+    camera.frustum.near = 1.0;
+    camera.frustum.far = 1000.0;
+
+    var scratchRight = new Cesium.Cartesian3();
+    var scratchRotation = new Cesium.Matrix3();
+    var scratchOrientation = new Cesium.Quaternion();
+    var position = camera.positionWC;
+    var direction = camera.directionWC;
+    var up = camera.upWC;
+    var right = camera.rightWC;
+    right = Cesium.Cartesian3.negate(right, scratchRight);
+
+    var rotation = scratchRotation;
+    Cesium.Matrix3.setColumn(rotation, 0, right, rotation);
+    Cesium.Matrix3.setColumn(rotation, 1, up, rotation);
+    Cesium.Matrix3.setColumn(rotation, 2, direction, rotation);
+    //计算视锥姿态
+    var orientation = Cesium.Quaternion.fromRotationMatrix(rotation, scratchOrientation);
+    //视锥轮廓线图形
+
+    var instanceOutline = new Cesium.GeometryInstance({
+        geometry: new Cesium.FrustumOutlineGeometry({
+            frustum: camera.frustum,
+            origin: firstPos,
+            orientation: orientation
+        }),
+        attributes: {
+            color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.YELLOW),
+            show: new Cesium.ShowGeometryInstanceAttribute(true)
+        }
+    });
+    var instance = new Cesium.GeometryInstance({
+        geometry: new Cesium.FrustumGeometry({
+            frustum: camera.frustum,
+            origin: firstPos,
+            orientation: orientation
+        }),
+        attributes: {
+            color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.RED.withAlpha(0.2)),
+            show: new Cesium.ShowGeometryInstanceAttribute(true)
+        }
+    });
+    viewer.scene.primitives.add(new Cesium.Primitive({
+        geometryInstances: instance,
+        appearance: new Cesium.PerInstanceColorAppearance()
+    }));
+    viewer.scene.primitives.add(new Cesium.Primitive({
+        geometryInstances: instanceOutline,
+        appearance: new Cesium.PerInstanceColorAppearance()
+    }));
+
+
+</script>
+</body>
+
+</html>

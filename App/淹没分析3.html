@@ -54,11 +54,13 @@
         114.2554303961646, 30.37848249790553, 114.2525772592218, 30.36346226508150
     ];
 
+    var extrudedHeight = 100;
+
     var entity = viewer.entities.add({
         polygon: {
             hierarchy: Cesium.Cartesian3.fromDegreesArray(positions),
             material: Cesium.Color.RED.withAlpha(0.5),
-            extrudedHeight: 100 // 设置为100米高
+            extrudedHeight: extrudedHeight // 设置为100米高
         }
     });
 
@@ -68,6 +70,29 @@
     // 然后在每个三角内部求 几何中心，
     // 算中心点到地形的距离，如果高于 100m 则不计算， 低于100m的计算
     // 最后汇总 每个应该计算的三角剖面的面积 * 淹没高度 得到淹没体积
+
+    function test() {
+        var range = 0.01;
+        var startLng = 114.25, endLng = 114.31, startLat = 30.33, endLat = 30.38;
+
+        for (var i = startLng; i <= endLng; i += range)
+            for (var j = startLat; j <= endLat; j += range) {
+                var point = Cesium.Cartesian3.fromDegrees(i, j);
+                // var height = viewer.scene.globe.getHeight(Cesium.Cartographic.fromCartesian(point));
+                var height = viewer.sampleTerrain() (Cesium.Cartographic.fromCartesian(point));
+                console.log(height);
+                viewer.entities.add({
+                    position:Cesium.Cartesian3.fromDegrees(i, j, height),
+                    point:{
+                        color:Cesium.Color.RED,
+                        pixelSize:10
+                    }
+                })
+            }
+    }
+
+
+
 
 </script>
 </body>

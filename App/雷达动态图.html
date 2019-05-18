@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>雷达动态图</title>
+    <link rel="stylesheet" href="../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">
+    <script src="../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+    </style>
+
+</head>
+
+<body>
+<div id="cesiumContainer">
+</div>
+<script>
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        })
+    });
+
+
+    var urls = [
+        'https://zouyaoji.top/vue-cesium/statics/SampleData/radarImage/1.png',
+        'https://zouyaoji.top/vue-cesium/statics/SampleData/radarImage/2.png',
+        'https://zouyaoji.top/vue-cesium/statics/SampleData/radarImage/3.png',
+        'https://zouyaoji.top/vue-cesium/statics/SampleData/radarImage/4.png',
+        'https://zouyaoji.top/vue-cesium/statics/SampleData/radarImage/5.png',
+        'https://zouyaoji.top/vue-cesium/statics/SampleData/radarImage/6.png',
+        'https://zouyaoji.top/vue-cesium/statics/SampleData/radarImage/7.png',
+        'https://zouyaoji.top/vue-cesium/statics/SampleData/radarImage/8.png',
+        'https://zouyaoji.top/vue-cesium/statics/SampleData/radarImage/9.png',
+        'https://zouyaoji.top/vue-cesium/statics/SampleData/radarImage/10.png'
+    ];
+
+    var positions = [
+        Cesium.Cartesian3.fromDegrees(102.5, 29.5),
+        Cesium.Cartesian3.fromDegrees(106.5, 29.5),
+        Cesium.Cartesian3.fromDegrees(106.5, 33.5),
+        Cesium.Cartesian3.fromDegrees(102.5, 33.5),
+    ];
+
+    var i = 0;
+
+    viewer.entities.add({
+        polygon: {
+            hierarchy: new Cesium.PolygonHierarchy(positions),
+            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            material: new Cesium.ImageMaterialProperty({
+                image: new Cesium.CallbackProperty(function () {
+                    return urls[i];
+                })
+            })
+        }
+    });
+
+    viewer.camera.setView({
+        destination: new Cesium.Cartesian3(-1432246.8223880068, 5761224.588247942, 3297281.1889481535),
+        orientation: {
+            heading: 6.20312220367255,
+            pitch: -0.9937536846355606,
+            roll: 0.002443376981836387
+        }
+    });
+
+
+    setInterval(function () {
+        i++;
+        if (i == 10) {
+            i = 0;
+        }
+    }, 1000)
+
+
+</script>
+</body>
+
+</html>
