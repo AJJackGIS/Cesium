@@ -29,15 +29,16 @@
 <script>
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwMDVjODczYy1kMzkxLTQ1OGUtYjAwOS01MDRlN2QzOTExYTgiLCJpZCI6NTM3Mywic2NvcGVzIjpbImFzciIsImdjIl0sImlhdCI6MTU0MzE5NzM1NH0.RqX0BJWiIngpnINQpX5S7-4Gb16v85X2PPl6DfnGvCw';
 
+    var terrainProvider = Cesium.createWorldTerrain({
+        requestVertexNormals: true,
+        requestWaterMask: true
+    });
     var viewer = new Cesium.Viewer('cesiumContainer', {
         shouldAnimate: true,
         imageryProvider: new Cesium.UrlTemplateImageryProvider({
             url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
         }),
-        terrainProvider: Cesium.createWorldTerrain({
-            requestVertexNormals: true,
-            requestWaterMask: true
-        })
+        terrainProvider: terrainProvider
     });
 
     var positions = [
@@ -66,32 +67,48 @@
 
     viewer.zoomTo(entity);
 
-    // positions为不规则平面 ， 需要对不规则平面进行三角剖分，
-    // 然后在每个三角内部求 几何中心，
-    // 算中心点到地形的距离，如果高于 100m 则不计算， 低于100m的计算
-    // 最后汇总 每个应该计算的三角剖面的面积 * 淹没高度 得到淹没体积
+    // positions为不规则平面 ， 需要对不规则平面进行最小单元剖分，
+    // 按照精度级别（5m,10m）,进行剖分
+    // 然后求每个最小单元的中心，判断是否在不规则平面内，在平面内的计算
+    // 判断中心点到地形的距离，如果高于 100m 则不计算， 低于100m的计算
+    // 最后汇总 每个应该计算的剖面的面积 * 淹没高度 得到淹没体积
 
     function test() {
-        var range = 0.01;
+        var range = 0.001;
         var startLng = 114.25, endLng = 114.31, startLat = 30.33, endLat = 30.38;
 
-        for (var i = startLng; i <= endLng; i += range)
-            for (var j = startLat; j <= endLat; j += range) {
+        for (let i = startLng; i <= endLng; i += range)
+            for (let j = startLat; j <= endLat; j += range) {
                 var point = Cesium.Cartesian3.fromDegrees(i, j);
-                // var height = viewer.scene.globe.getHeight(Cesium.Cartographic.fromCartesian(point));
-                var height = viewer.sampleTerrain() (Cesium.Cartographic.fromCartesian(point));
-                console.log(height);
-                viewer.entities.add({
-                    position:Cesium.Cartesian3.fromDegrees(i, j, height),
-                    point:{
-                        color:Cesium.Color.RED,
-                        pixelSize:10
-                    }
-                })
+                var cartographic = Cesium.Cartographic.fromCartesian(point);
+                Cesium.sampleTerrainMostDetailed(terrainProvider, [].concat(cartographic)).then(function (updatedPositions) {
+                    var height = updatedPositions[0].height;
+                    viewer.entities.add({
+                        position: Cesium.Cartesian3.fromDegrees(i, j, height),
+                        point: {
+                            color: Cesium.Color.GREEN,
+                            pixelSize: 2
+                        }
+                    })
+                });
             }
     }
 
+    /**
+     * 获取不规则多边形的最小外包矩形
+     */
+    function getMBRBoundingRectangle(positions) {
+        var minX = 180, minY = 90, maxX = -180, maxY = -90;
+        for (var i = 0; i < positions.length - 1; i = i + 2) {
+            if (positions[i] < minX) minX = positions[i];
+            else if (positions[i] > maxX) maxX = positions[i];
+            if (positions[i + 1] < minY) minY = positions[i + 1];
+            else if (positions[i + 1] > maxY) maxY = positions[i + 1];
+        }
+        return [minX, minY, maxX, maxY];
+    }
 
+    // 射线求交 点是否在面内
 
 
 </script>
