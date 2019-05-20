@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>视频投影</title>
+    <link rel="stylesheet" href="../lib/Cesium-1.51/Build/Cesium/Widgets/widgets.css">
+    <script src="../lib/Cesium-1.51/Build/Cesium/Cesium.js"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        #trailer {
+            position: absolute;
+            bottom: 75px;
+            right: 0;
+            width: 320px;
+            height: 180px;
+        }
+    </style>
+
+</head>
+
+<body>
+<div id="cesiumContainer">
+</div>
+<video id="trailer" autoplay loop crossorigin controls style="display: none;">
+    <source src="https://cesiumjs.org/videos/Sandcastle/big-buck-bunny_trailer.mp4" type="video/mp4">
+</video>
+<script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwMDVjODczYy1kMzkxLTQ1OGUtYjAwOS01MDRlN2QzOTExYTgiLCJpZCI6NTM3Mywic2NvcGVzIjpbImFzciIsImdjIl0sImlhdCI6MTU0MzE5NzM1NH0.RqX0BJWiIngpnINQpX5S7-4Gb16v85X2PPl6DfnGvCw';
+
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
+        }),
+        terrainProvider: Cesium.createWorldTerrain({
+            requestVertexNormals: true,
+            requestWaterMask: true
+        }),
+        shouldAnimate: true
+    });
+
+    var videoElement = document.getElementById('trailer');
+
+    var video = viewer.entities.add({
+        polygon: {
+            hierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray([114.25, 30.34, 114.30, 30.34, 114.30, 30.36, 114.25, 30.36])),
+            classificationType: Cesium.ClassificationType.BOTH,
+            material: videoElement
+        }
+    });
+
+    viewer.zoomTo(video);
+
+    // 设置与时钟同步
+    var synchronizer = new Cesium.VideoSynchronizer({
+        clock: viewer.clock,
+        element: videoElement
+    });
+    // 取消时钟同步
+    // if (Cesium.defined(synchronizer)) {
+    //     synchronizer = synchronizer.destroy();
+    //     videoElement.playbackRate = 1.0;
+    // }
+
+</script>
+</body>
+
+</html>
