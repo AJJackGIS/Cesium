@@ -61,7 +61,9 @@
         polygon: {
             hierarchy: Cesium.Cartesian3.fromDegreesArray(positions),
             material: Cesium.Color.RED.withAlpha(0.5),
-            extrudedHeight: extrudedHeight // 设置为100米高
+            extrudedHeight: new Cesium.CallbackProperty(function () {
+                return extrudedHeight;
+            })
         }
     });
 
@@ -73,25 +75,13 @@
     // 判断中心点到地形的距离，如果高于 100m 则不计算， 低于100m的计算
     // 最后汇总 每个应该计算的剖面的面积 * 淹没高度 得到淹没体积
 
-    function test() {
-        var range = 0.001;
-        var startLng = 114.25, endLng = 114.31, startLat = 30.33, endLat = 30.38;
+    var miniLength = 100;
 
-        for (let i = startLng; i <= endLng; i += range)
-            for (let j = startLat; j <= endLat; j += range) {
-                var point = Cesium.Cartesian3.fromDegrees(i, j);
-                var cartographic = Cesium.Cartographic.fromCartesian(point);
-                Cesium.sampleTerrainMostDetailed(terrainProvider, [].concat(cartographic)).then(function (updatedPositions) {
-                    var height = updatedPositions[0].height;
-                    viewer.entities.add({
-                        position: Cesium.Cartesian3.fromDegrees(i, j, height),
-                        point: {
-                            color: Cesium.Color.GREEN,
-                            pixelSize: 2
-                        }
-                    })
-                });
-            }
+    function test() {
+        calculateVolume(positions, miniLength, extrudedHeight, terrainProvider).then(function (data) {
+            console.log("计算结束");
+            console.log("淹没体积:" + data.totalVolume + "立方米, 截面积:" + data.totalArea / 1000000 + "平方千米");
+        })
     }
 
     /**
@@ -105,10 +95,146 @@
             if (positions[i + 1] < minY) minY = positions[i + 1];
             else if (positions[i + 1] > maxY) maxY = positions[i + 1];
         }
-        return [minX, minY, maxX, maxY];
+
+        // viewer.entities.add({
+        //     polygon: {
+        //         hierarchy: Cesium.Cartesian3.fromDegreesArray([minX, minY, maxX, minY, maxX, maxY, minX, maxY]),
+        //         material: Cesium.Color.BLUE.withAlpha(0.5),
+        //         extrudedHeight: extrudedHeight // 设置为100米高
+        //     }
+        // });
+
+        return new Cesium.Rectangle(minX, minY, maxX, maxY);
     }
 
-    // 射线求交 点是否在面内
+    /**
+     * 剖分矩形
+     */
+    function subdivision(rectangle, minimum) {
+
+        // 经纬度
+        var southwest = Cesium.Rectangle.southwest(rectangle); // 最下角
+        var northeast = Cesium.Rectangle.northeast(rectangle); // 右上角
+
+        // 大地坐标
+        var webMercatorProjection = new Cesium.WebMercatorProjection();
+        southwest = webMercatorProjection.project(Cesium.Cartographic.fromDegrees(southwest.longitude, southwest.latitude));
+        northeast = webMercatorProjection.project(Cesium.Cartographic.fromDegrees(northeast.longitude, northeast.latitude));
+
+        var minX = southwest.x, minY = southwest.y, maxX = northeast.x, maxY = northeast.y;
+
+        var subRectangles = [];
+
+        for (var i = minX; i < maxX; i = i + minimum) {
+            for (var j = minY; j < maxY; j = j + minimum) {
+                var rectMinX = i, rectMaxX = i + minimum, rectMinY = j, rectMaxY = j + minimum;
+
+                // 弧度
+                var southwestCartographic = webMercatorProjection.unproject(new Cesium.Cartesian3(rectMinX, rectMinY));
+                var northeastCartographic = webMercatorProjection.unproject(new Cesium.Cartesian3(rectMaxX, rectMaxY));
+
+                // 最小矩形
+                var subRectangle = new Cesium.Rectangle(
+                    southwestCartographic.longitude,
+                    southwestCartographic.latitude,
+                    northeastCartographic.longitude,
+                    northeastCartographic.latitude
+                );
+
+                subRectangles.push(subRectangle);
+
+                // 矩形中点
+                // var centerOfRectangle = Cesium.Rectangle.center(subRectangle);
+
+                // viewer.entities.add({
+                //     position: Cesium.Cartesian3.fromDegrees(
+                //         Cesium.Math.toDegrees(centerOfRectangle.longitude),
+                //         Cesium.Math.toDegrees(centerOfRectangle.latitude),
+                //         extrudedHeight + 0.5),
+                //     point: {
+                //         color: Cesium.Color.fromRandom(),
+                //         pixelSize: 10
+                //     }
+                // });
+                //
+                // viewer.entities.add({
+                //     rectangle: {
+                //         coordinates: subRectangle,
+                //         material: Cesium.Color.fromRandom().withAlpha(0.5),
+                //         extrudedHeight: extrudedHeight, // 设置为100米高
+                //         height: 0
+                //     }
+                // });
+            }
+        }
+        return subRectangles;
+    }
+
+    /**
+     *  判断一个点是否在多边形内部(射线法)
+     *  @param polygon 多边形坐标集合[Cartesian3]
+     *  @param point 测试点坐标 Cartographic
+     *  返回true为真，false为假
+     *  */
+    function checkIntersect(polygon, point) {
+        point = Cesium.Cartesian3.fromRadians(point.longitude, point.latitude);
+        var x = point.x, y = point.y;
+        var inside = false;
+        for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+            var xi = polygon[i].x, yi = polygon[i].y;
+            var xj = polygon[j].x, yj = polygon[j].y;
+
+            var intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    }
+
+    /**
+     * 计算填挖方体积
+     * @param positions 范围 [lon,lat,lon,lat......]
+     * @param subLength 最小单元长度
+     * @param extrudedHeight 淹没高度
+     * @param terrainProvider 地形提供者
+     */
+    function calculateVolume(positions, subLength, extrudedHeight, terrainProvider) {
+        var rectangle = getMBRBoundingRectangle(positions);
+        var subRectangles = subdivision(rectangle, subLength);
+        var polygon = [];
+        for (var i = 0; i < positions.length - 1; i = i + 2) {
+            polygon.push(Cesium.Cartesian3.fromDegrees(positions[i], positions[i + 1]));
+        }
+        var centerPoints = [];
+        for (var i = 0; i < subRectangles.length; i++) {
+            var centerPoint = Cesium.Rectangle.center(subRectangles[i]);
+            var contains = checkIntersect(polygon, centerPoint);
+            if (contains) {
+                // viewer.entities.add({
+                //     rectangle: {
+                //         coordinates: subRectangles[i],
+                //         material: Cesium.Color.fromRandom().withAlpha(0.5),
+                //         extrudedHeight: extrudedHeight, // 设置为100米高
+                //         height: 0
+                //     }
+                // });
+                centerPoints.push(centerPoint);
+            }
+        }
+        return new Promise(function (resolve, reject) {
+            Cesium.sampleTerrainMostDetailed(terrainProvider, centerPoints).then(function (updatedPositions) { // 获取指定位置的地形高度
+                var totalVolume = 0;
+                var totalArea = 0;
+                for (var i = 0; i < updatedPositions.length; i++) {
+                    var height = updatedPositions[i].height; // 地形高度
+                    if (Cesium.defined(height) && height < extrudedHeight) {
+                        totalVolume += subLength * subLength * (extrudedHeight - height); // 体积
+                        totalArea += subLength * subLength; // 截面积
+                    }
+                }
+                resolve({totalVolume: totalVolume, totalArea: totalArea});
+            });
+        });
+    }
 
 
 </script>
