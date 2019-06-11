@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>透明建筑三维效果</title>
+    <link rel="stylesheet" href="../libs/Cesium/Widgets/widgets.css">
+    <script src="../libs/Cesium/Cesium.js"></script>
+    <!--<script src="http://localhost:90/SuperMap10/Build/Cesium/Cesium.js"></script>-->
+    <!--<link href="http://localhost:90/SuperMap10/Build/Cesium/Widgets/widgets.css" rel="stylesheet">-->
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+    </style>
+    <script src="../utils/coorTransform.js"></script>
+
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<script>
+    var viewer = new Cesium.Viewer('cesiumContainer');
+    viewer.imageryLayers.removeAll();
+    viewer.scene.globe.baseColor = Cesium.Color.BLUE;
+    // viewer.scene.globe.globeAlpha = 0.6; // 不能写这个
+    // var viewer = new Cesium.Viewer('cesiumContainer', {
+    //     imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
+    //         url: 'http://map.geoq.cn/arcgis/rest/services/ChinaOnlineStreetPurplishBlue/MapServer'
+    //     })
+    // });
+    var scene = viewer.scene;
+
+    scene.camera.setView({
+        destination: new Cesium.Cartesian3(-2261919.291691637, 5010352.855024903, 3238122.3105763644),
+        orientation: {
+            heading: 0.21849558981880524,
+            pitch: -0.49854392799607483,
+            roll: 1.0746958878371515e-13
+        }
+    });
+
+    let promiseBaseLayer = scene.addS3MTilesLayerByScp("http://localhost:90/wh2/whbuild.scp", {
+        // let promiseBaseLayer = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-SanWeiChangJing2/rest/realspace/datas/建筑轮廓@build/config", {
+        // let promiseBaseLayer = scene.addS3MTilesLayerByScp("http://172.29.1.151:8090/iserver/services/3D-SanWeiChangJing/rest/realspace/datas/建筑轮廓@build/config", {
+        name: "baseLayer"
+    });
+    var Slayer = null;
+    var hyp = null;
+    promiseBaseLayer.then(function (layer) {
+        Slayer = layer;
+        layer.cullEnabled = false; //双面渲染  关键
+        layer.hasLight = true; //关闭光照  关键
+        layer.style3D.fillForeColor.alpha = 0.11; //半透
+        layer.style3D.fillStyle = Cesium.FillStyle.Fill_And_WireFrame; // Fill WireFrame Fill_And_WireFrame
+        layer.style3D.lineColor = Cesium.Color.WHITE.withAlpha(1);
+        layer.style3D.lineWidth = 1.0;
+        layer.wireFrameMode = Cesium.WireFrameType.Sketch; // Triangle Quad Sketch
+
+        // 颜色矫正
+        // viewer.scene.colorCorrection.show = true;
+        // viewer.scene.colorCorrection.saturation = 1.2;
+        // viewer.scene.colorCorrection.brightness = 0.8;
+        // viewer.scene.colorCorrection.contrast = 0.7;
+        // viewer.scene.colorCorrection.hue = 0.0;
+        //
+        // // 泛光
+        // viewer.scene.bloomEffect.show = true;
+        // viewer.scene.bloomEffect.threshold = 0.65;
+        // viewer.scene.bloomEffect.bloomIntensity = 1;
+
+        // layer.bloomEffect = 0.8;
+        // layer.bloomEnable = true;
+        //
+        // layer.brightness = 0.4;
+        layer.contrast = 2;
+        layer.gamma = 0.8;
+        // layer.hue = 0.1;
+        // layer.saturation = 1;
+        // layer.shadowType = Cesium.SHADOWTYPE.ALL;
+
+
+
+        // 精准定位
+        scene.camera.setView({
+            destination: new Cesium.Cartesian3(-2261919.291691637, 5010352.855024903, 3238122.3105763644),
+            orientation: {
+                heading: 0.21849558981880524,
+                pitch: -0.49854392799607483,
+                roll: 1.0746958878371515e-13
+            }
+        });
+
+        hyp = new Cesium.HypsometricSetting();
+
+        //创建分层设色对象   设置最大/最小可见高度   颜色表  显示模式   透明度及线宽
+        var colorTable = new Cesium.ColorTable();
+
+        // colorTable.insert(108, new Cesium.Color(0 / 255, 15 / 255, 255 / 255));
+        // colorTable.insert(90, new Cesium.Color(0 / 255, 15 / 255, 255 / 255));
+        // colorTable.insert(72, new Cesium.Color(0 / 255, 15 / 255, 255 / 255));
+        // colorTable.insert(54, new Cesium.Color(0 / 255, 40 / 255, 255 / 255));
+        // colorTable.insert(36, new Cesium.Color(0 / 255, 95 / 255, 255 / 255));
+        // colorTable.insert(18, new Cesium.Color(0 / 255, 130 / 255, 255 / 255));
+        // colorTable.insert(0, new Cesium.Color(0 / 255, 165 / 255, 255 / 255));
+
+        colorTable.insert(108, new Cesium.Color(23 / 255, 15 / 255, 46 / 255));
+        colorTable.insert(90, new Cesium.Color(136 / 255, 26 / 255, 140 / 255));
+        colorTable.insert(71, new Cesium.Color(210 / 255, 15 / 255, 15 / 255));
+        colorTable.insert(54, new Cesium.Color(221 / 255, 224 / 255, 7 / 255));
+        colorTable.insert(36, new Cesium.Color(20 / 255, 187 / 255, 18 / 255));
+        colorTable.insert(18, new Cesium.Color(0, 161 / 255, 1));
+        colorTable.insert(0, new Cesium.Color(9 / 255, 9 / 255, 212 / 255));
+
+        hyp.MaxVisibleValue = 150;
+        hyp.MinVisibleValue = 0;
+
+        hyp.ColorTable = colorTable;
+        hyp.DisplayMode = Cesium.HypsometricSettingEnum.DisplayMode.FACE;
+        // hyp.Opacity = 0.5;
+
+        hyp.LineInterval = 2.0;
+
+        //设置图层分层设色属性
+        // layer.hypsometricSetting = {
+        //     hypsometricSetting: hyp,
+        //     analysisMode: Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_ALL
+        // };
+    });
+
+    // // 局部闪烁
+    // var scope = [
+    //     114.3052630667005, 30.51742777573057,
+    //     114.30871622870134, 30.51751506219176,
+    //     114.30858243248151, 30.515246200539053,
+    //     114.30511720297659, 30.515385832212978
+    // ];
+    //
+    // var min = 0.1, max = 0.9;
+    // var v = 0.6;
+    // var t = "p";
+    //
+    // var colorMaterialProperty = new Cesium.ColorMaterialProperty();
+    // var color = Cesium.Color.YELLOW.withAlpha(v);
+    // colorMaterialProperty.color = new Cesium.CallbackProperty(function (time, result) {
+    //
+    //     if (v >= max) {
+    //         t = "m";
+    //     } else if (v <= min) {
+    //         t = "p";
+    //     }
+    //
+    //     if (t == "m") {
+    //         v = v - 0.01;
+    //     } else v = v + 0.005;
+    //     color.alpha = v;
+    //     return color;
+    // }, false);
+
+    // var entity = viewer.entities.add({
+    //     polygon: {
+    //         hierarchy: Cesium.Cartesian3.fromDegreesArray(scope),
+    //         extrudedHeight: 20.0,
+    //         material: colorMaterialProperty,
+    //         closeTop: true,
+    //         closeBottom: true
+    //     }
+    // });
+
+    // setTimeout(function () {
+    //     setInterval(function () {
+    //         if (v >= max) {
+    //             t = "m";
+    //         } else if (v <= min) {
+    //             t = "p";
+    //         }
+    //
+    //         if (t == "m") {
+    //             v = v - 0.1;
+    //         } else v = v + 0.1;
+    //         console.log(v, color);
+    //         entity.polygon.material = new Cesium.ColorMaterialProperty(Cesium.Color.YELLOW.withAlpha(v));
+    //
+    //     }, 100);
+    // }, 5000);
+
+
+    // viewer.screenSpaceEventHandler.setInputAction(function (clickEvent) {
+    //     var position = viewer.scene.pickPosition(clickEvent.position);
+    //     position = Cesium.Cartographic.fromCartesian(position);
+    //     var lon = Cesium.Math.toDegrees(position.longitude);
+    //     var lat = Cesium.Math.toDegrees(position.latitude);
+    //     console.log(lon, lat);
+    // }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    setTimeout(function () {
+        loadTraffic();
+    }, 3000);
+
+    function loadTraffic() {
+        Cesium.loadJson("./road.geojson").then(function (jsonData) {
+            var features = jsonData.features;
+            console.log(features.length);
+            features.forEach(function (feature, i) {
+                if (i % 7 == 0) {
+                    var points = feature.geometry.coordinates[0];
+                    var fromPoint = points[0];
+                    var toPoint = points[points.length - 1];
+
+                    viewer.entities.add({ // 用于打底的线
+                        polyline: {
+                            positions: Cesium.Cartesian3.fromDegreesArray([fromPoint[0], fromPoint[1], toPoint[0], toPoint[1]]),
+                            width: 5, // 线的宽度，像素为单位
+                            material: Cesium.Color.fromCssColorString("rgba(118, 233, 241, 0.1)")
+                        }
+                    });
+
+                    viewer.entities.add({ // 尾迹线
+                        polyline: {
+                            positions: Cesium.Cartesian3.fromDegreesArray([fromPoint[0], fromPoint[1], toPoint[0], toPoint[1]]),
+                            width: 5, // 线的宽度，像素为单位
+                            material: new Cesium.PolylineTrailMaterialProperty({ // 尾迹线材质
+                                color: Cesium.Color.fromCssColorString("rgba(118, 233, 241, 1.0)"),
+                                trailLength: 0.2,
+                                period: 5.0
+                            })
+                        }
+                    });
+                }
+            });
+        });
+    }
+</script>
+</body>
+
+</html>
