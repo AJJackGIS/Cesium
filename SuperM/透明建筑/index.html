@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>透明建筑三维效果</title>
+    <link rel="stylesheet" href="../../libs/Cesium/Widgets/widgets.css">
+    <script src="../../libs/Cesium/Cesium.js"></script>
+    <script src="../../libs/jquery/jquery-1.11.0.js"></script>
+    <script src="../../libs/js/echarts.js"></script>
+    <style>
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+        .popup-layer {
+            /*重要*/
+            user-select: none;
+            /*禁止选中*/
+            pointer-events: none;
+            /*鼠标穿透*/
+            /*重要*/
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 445px;
+            height: 260px;
+            z-index: 99999;
+            background: url("./images/popup.png") no-repeat;
+            background-size: 100% 100%;
+        }
+
+        .popup-layer .title {
+            position: absolute;
+            top: -2px;
+            left: 240px;
+            color: white;
+            font-size: 16px;
+            font-family: KaiTi;
+            user-select: text;
+            pointer-events: auto;
+        }
+
+        .popup-layer .main {
+            position: absolute;
+            top: 10px;
+            left: 170px;
+            right: 0;
+            bottom: 100px;
+            margin: 10px;
+            color: white;
+            font-size: 14px;
+            user-select: text;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+
+<body>
+<div id="cesiumContainer"></div>
+<div class='popup-layer' id="popup">
+    <div class='title'>
+        这里是宇宙大光谷中心
+    </div>
+    <div class='main' id="content">
+    </div>
+</div>
+<script>
+    var viewer = new Cesium.Viewer('cesiumContainer');
+    viewer.imageryLayers.removeAll(); // 去掉影像
+    viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#6495ED");
+    var scene = viewer.scene;
+
+    scene.camera.setView({
+        destination: new Cesium.Cartesian3(-2269952.6745844022, 5004611.713770041, 3237691.5256875316),
+        orientation: {
+            heading: 5.678714693777653,
+            pitch: -0.33204377626548043,
+            roll: 6.283185307179583
+        }
+    });
+
+    // 加载建筑白膜
+    let promiseBaseLayer = scene.addS3MTilesLayerByScp("http://localhost:90/gg/whbuild.scp", {
+        name: "baseLayer"
+    });
+
+    promiseBaseLayer.then(function (layer) {
+        layer.cullEnabled = false;
+        layer.hasLight = true;
+
+        layer.style3D.fillForeColor.alpha = 0.11; //半透 不能再比这个小了
+        layer.style3D.fillStyle = Cesium.FillStyle.Fill_And_WireFrame; // 填充和线框模式
+        layer.style3D.lineColor = Cesium.Color.WHITE.withAlpha(1);
+        layer.style3D.lineWidth = 1.0;
+        layer.wireFrameMode = Cesium.WireFrameType.Sketch; // 草图模式
+
+        // 调节场景光线
+        layer.contrast = 2;
+        layer.gamma = 0.8;
+
+        hyp = new Cesium.HypsometricSetting();
+
+        //创建分层设色对象   设置最大/最小可见高度   颜色表  显示模式   透明度及线宽
+        var colorTable = new Cesium.ColorTable();
+
+        colorTable.insert(108, new Cesium.Color(0 / 255, 15 / 255, 255 / 255));
+        colorTable.insert(90, new Cesium.Color(0 / 255, 15 / 255, 255 / 255));
+        colorTable.insert(72, new Cesium.Color(0 / 255, 15 / 255, 255 / 255));
+        colorTable.insert(54, new Cesium.Color(0 / 255, 40 / 255, 255 / 255));
+        colorTable.insert(36, new Cesium.Color(0 / 255, 95 / 255, 255 / 255));
+        colorTable.insert(18, new Cesium.Color(0 / 255, 130 / 255, 255 / 255));
+        colorTable.insert(0, new Cesium.Color(0 / 255, 165 / 255, 255 / 255));
+
+        // colorTable.insert(108, new Cesium.Color(23 / 255, 15 / 255, 46 / 255));
+        // colorTable.insert(90, new Cesium.Color(136 / 255, 26 / 255, 140 / 255));
+        // colorTable.insert(71, new Cesium.Color(210 / 255, 15 / 255, 15 / 255));
+        // colorTable.insert(54, new Cesium.Color(221 / 255, 224 / 255, 7 / 255));
+        // colorTable.insert(36, new Cesium.Color(20 / 255, 187 / 255, 18 / 255));
+        // colorTable.insert(18, new Cesium.Color(0, 161 / 255, 1));
+        // colorTable.insert(0, new Cesium.Color(9 / 255, 9 / 255, 212 / 255));
+
+        hyp.MaxVisibleValue = 150;
+        hyp.MinVisibleValue = 0;
+
+        hyp.ColorTable = colorTable;
+        hyp.DisplayMode = Cesium.HypsometricSettingEnum.DisplayMode.FACE;
+        hyp.Opacity = 0.5;
+
+        hyp.LineInterval = 2.0;
+
+        //设置图层分层设色属性
+        // layer.hypsometricSetting = {
+        //     hypsometricSetting: hyp,
+        //     analysisMode: Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_ALL
+        // };
+
+        addLight(Cesium.Cartesian3.fromDegrees(114.3991825197576, 30.51761665528449));
+        addLight(Cesium.Cartesian3.fromDegrees(114.37582805817355, 30.50433675146387));
+    });
+
+    function addLight(position) {
+        // 添加灯光
+        var options = {
+            color: new Cesium.Color(1, 1, 1, 1),
+            cutoffDistance: 1000,
+            decay: 1,
+            intensity: 3
+        };
+        var pointLight = new Cesium.PointLight(position, options);
+        scene.addLightSource(pointLight);
+    }
+
+
+    viewer.screenSpaceEventHandler.setInputAction(function (clickEvent) {
+        var position = viewer.scene.pickPosition(clickEvent.position);
+        position = Cesium.Cartographic.fromCartesian(position);
+        var lon = Cesium.Math.toDegrees(position.longitude);
+        var lat = Cesium.Math.toDegrees(position.latitude);
+        console.log(lon, lat);
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    setTimeout(function () {
+        loadTraffic();
+    }, 3000);
+
+    function loadTraffic() {
+        Cesium.loadJson("./road2.geojson").then(function (jsonData) {
+            var features = jsonData.features;
+            console.log(features.length);
+            features.forEach(function (feature, i) {
+                var points = feature.geometry.coordinates;
+                var fromPoint = points[0];
+                var toPoint = points[points.length - 1];
+
+                viewer.entities.add({ // 用于打底的线
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArray([fromPoint[0], fromPoint[1], toPoint[0], toPoint[1]]),
+                        width: 5, // 线的宽度，像素为单位
+                        material: Cesium.Color.fromCssColorString("rgba(118, 233, 241, 0.1)")
+                    }
+                });
+
+                viewer.entities.add({ // 尾迹线
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArray([fromPoint[0], fromPoint[1], toPoint[0], toPoint[1]]),
+                        width: 5, // 线的宽度，像素为单位
+                        material: new Cesium.PolylineTrailMaterialProperty({ // 尾迹线材质
+                            color: Cesium.Color.fromCssColorString("rgba(118, 233, 241, 1.0)"),
+                            trailLength: 0.2,
+                            period: 5.0
+                        })
+                    }
+                });
+            });
+        });
+    }
+
+    var billboards = new Cesium.BillboardCollection();
+    var polyLines = [];
+
+    var locations = [
+        {x: 114.38958367902477, y: 30.49918128312596, z: 0, icon: '楼栋'},
+        {x: 114.39947678574673, y: 30.50542630803144, z: 0, icon: '楼栋'},
+        {x: 114.38701535727571, y: 30.50806398741482, z: 0, icon: '楼栋'},
+        {x: 114.38687049422941, y: 30.51705316848992, z: 0, icon: '楼栋'},
+        {x: 114.37714359937330, y: 30.51327322847547, z: 0, icon: '楼栋'},
+        {x: 114.37886581345096, y: 30.50055988154486, z: 0, icon: '楼栋'},
+        {x: 114.37193377903475, y: 30.50181232299920, z: 0, icon: '楼栋'},
+        {x: 114.40453568188990, y: 30.51707253787854, z: 0, icon: '楼栋'},
+
+        {x: 114.39374166136425, y: 30.506015197956938, z: 0, icon: '停车场'},
+        {x: 114.39643815689888, y: 30.506460610128432, z: 0, icon: '停车场'},
+        {x: 114.39889554785309, y: 30.507564505318395, z: 0, icon: '停车场'},
+        {x: 114.39150059392855, y: 30.509866533704006, z: 0, icon: '停车场'},
+
+        {x: 114.3993821324231, y: 30.5087204082341, z: 0, icon: '办公室'},
+        {x: 114.3951526997671, y: 30.5061628144385, z: 0, icon: '办公室'},
+        {x: 114.3921439189583, y: 30.5101854445561, z: 0, icon: '办公室'},
+        {x: 114.3909310520082, y: 30.5089073169902, z: 0, icon: '办公室'},
+
+        {x: 114.38804938258299, y: 30.51831799956758, z: 0, icon: '篮球场'},
+        {x: 114.40115161756702, y: 30.51499892692002, z: 0, icon: '篮球场'},
+        {x: 114.38229137806779, y: 30.50454553388355, z: 0, icon: '篮球场'},
+
+        {x: 114.39024628948629, y: 30.50349464065783, z: 0, icon: '食堂'},
+        {x: 114.39513200219724, y: 30.50139992427520, z: 0, icon: '食堂'},
+        {x: 114.40073446276179, y: 30.51663447915730, z: 0, icon: '食堂'},
+
+        {x: 114.39686832869869, y: 30.51333642088118, z: 0, icon: '宿舍'},
+        {x: 114.39801219028828, y: 30.51346221628364, z: 0, icon: '宿舍'},
+        {x: 114.39885318493423, y: 30.51354231652462, z: 0, icon: '宿舍'},
+        {x: 114.39783743027161, y: 30.51382995117622, z: 0, icon: '宿舍'},
+        {x: 114.39687728799741, y: 30.51371127508343, z: 0, icon: '宿舍'},
+        {x: 114.39684390165283, y: 30.51440925921451, z: 0, icon: '宿舍'},
+        {x: 114.39779902101115, y: 30.51432055161186, z: 0, icon: '宿舍'},
+        {x: 114.39879046067911, y: 30.51456437556942, z: 0, icon: '宿舍'},
+        {x: 114.39793088687162, y: 30.51464958956283, z: 0, icon: '宿舍'},
+        {x: 114.39693338851905, y: 30.51476994233260, z: 0, icon: '宿舍'}
+    ];
+
+    locations.forEach(function (point) {
+
+        var basePoint = point;
+        var extractPoint = {x: basePoint.x, y: basePoint.y, z: basePoint.z + 20};
+
+        polyLines.push(viewer.entities.add({
+            id: Cesium.createGuid(),
+            polyline: {
+                positions: Cesium.Cartesian3.fromDegreesArrayHeights([basePoint.x, basePoint.y, basePoint.z, extractPoint.x, extractPoint.y, extractPoint.z]),
+                width: 2,
+                material: new Cesium.PolylineGlowMaterialProperty({
+                    glowPower: 0.2,
+                    color: Cesium.Color.RED
+                })
+            }
+        }));
+
+        polyLines.push(viewer.entities.add({
+            polyline: {
+                positions: Cesium.Cartesian3.fromDegreesArrayHeights([basePoint.x, basePoint.y, basePoint.z, extractPoint.x, extractPoint.y, extractPoint.z]),
+                width: 2, // 线的宽度，像素为单位
+                material: new Cesium.PolylineTrailMaterialProperty({ // 尾迹线材质
+                    color: Cesium.Color.fromCssColorString("rgba(118, 233, 241, 1.0)"),
+                    trailLength: 0.2,
+                    period: 1.0
+                })
+            }
+        }));
+
+        billboards.add({
+            id: Cesium.createGuid(),
+            position: Cesium.Cartesian3.fromDegrees(extractPoint.x, extractPoint.y, extractPoint.z),
+            image: './images/' + point.icon + '.png',
+            width: 24,
+            height: 24,
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            scaleByDistance: new Cesium.NearFarScalar(500, 1.0, 10000, 0.0)
+        });
+    });
+
+    viewer.scene.primitives.add(billboards);
+
+    var camera_locations = [
+        {x: 114.39558484172561, y: 30.508629998788916, z: 1},
+        {x: 114.39825624811368, y: 30.509042786759423, z: 1},
+        {x: 114.39831750952473, y: 30.507694207979284, z: 1},
+        {x: 114.39746007633873, y: 30.506151843998364, z: 1},
+        {x: 114.39496862208810, y: 30.507560024622524, z: 1}
+    ];
+    var cameraUrl = './camera.s3m';
+    var layer = new Cesium.DynamicLayer3D(scene.context, [cameraUrl]);
+    scene.primitives.add(layer);
+
+    var states = [];
+    for (var i = 0; i < camera_locations.length; i++) {
+        var point = camera_locations[i];
+        var cameraState = new Cesium.DynamicObjectState({
+            id: i,
+            longitude: point.x,
+            latitude: point.y,
+            altitude: point.z,
+            // scale: new Cesium.Cartesian3(0.7, 0.7, 0.7)
+            scale: new Cesium.Cartesian3(5, 5, 5)
+        });
+        states.push(cameraState);
+    }
+    layer.updateObjectWithModel(cameraUrl, states);
+
+
+    //  圆形扫描
+    var lon = 114.39380942032878, lat = 30.508352990014266;
+    addCircleRipple(viewer, {
+        lon: lon,
+        lat: lat,
+        height: 0.1,
+        maxR: 200,
+        minR: 0,//最好为0
+        deviationR: 5,//差值 差值也大 速度越快
+        eachInterval: 1000,//两个圈的时间间隔
+        imageUrl: "./images/redCircle2.png"
+    });
+    viewer.entities.add({
+        polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArrayHeights([
+                lon, lat, 0,
+                lon, lat, 200,]
+            ),
+            width: 4,
+            material: new Cesium.PolylineGlowMaterialProperty({
+                glowPower: 0.1,
+                color: Cesium.Color.BLUE
+            })
+        }
+    });
+
+    function addCircleRipple(viewer, data) {
+        var r1 = data.minR, r2 = data.minR;
+
+        function changeR1() {
+            r1 = r1 + data.deviationR;
+            if (r1 >= data.maxR) {
+                r1 = data.minR;
+            }
+
+            return r1;
+        }
+
+        function changeR2() {
+            r2 = r2 + data.deviationR;
+            if (r2 >= data.maxR) {
+                r2 = data.minR;
+            }
+            return r2;
+        }
+
+        viewer.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(data.lon, data.lat, data.height),
+            ellipse: {
+                semiMajorAxis: new Cesium.CallbackProperty(changeR1, false),
+                semiMinorAxis: new Cesium.CallbackProperty(function () {
+                    return r1;
+                }, false),
+                height: data.height,
+                material: new Cesium.ImageMaterialProperty({
+                    image: data.imageUrl,
+                    repeat: new Cesium.Cartesian2(1.0, 1.0),
+                    transparent: true,
+                    color: new Cesium.CallbackProperty(function () {
+                        var alp = 1 - r1 / data.maxR;
+                        return Cesium.Color.WHITE.withAlpha(alp)
+                    }, false)
+                })
+            }
+        });
+        setTimeout(function () {
+            viewer.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(data.lon, data.lat, data.height),
+                ellipse: {
+                    semiMajorAxis: new Cesium.CallbackProperty(changeR2, false),
+                    semiMinorAxis: new Cesium.CallbackProperty(function () {
+                        return r2;
+                    }, false),
+                    height: data.height,
+                    material: new Cesium.ImageMaterialProperty({
+                        image: data.imageUrl,
+                        repeat: new Cesium.Cartesian2(1.0, 1.0),
+                        transparent: true,
+                        color: new Cesium.CallbackProperty(function () {
+                            var alp = 1;
+                            alp = 1 - r2 / data.maxR;
+                            return Cesium.Color.WHITE.withAlpha(alp)
+                        }, false)
+                    })
+                }
+            });
+        }, data.eachInterval);
+    }
+
+    var data = {
+        lon: lon, // 中心点经度
+        lat: lat, // 中心点纬度
+        element: $("#popup")
+    };
+
+    var position = Cesium.Cartesian3.fromDegrees(data.lon, data.lat, 200);//data.boxHeightMax为undef也没事
+
+    viewer.scene.preRender.addEventListener(function () {
+        var canvasPosition = viewer.scene.cartesianToCanvasCoordinates(position);
+        if (Cesium.defined(canvasPosition)) {
+            data.element.css({
+                left: canvasPosition.x, // 偏移
+                top: canvasPosition.y - 260 // 偏移
+            });
+        }
+    });
+
+    setChart();
+
+    function setChart() {
+        var dataAxis = ['点', '击', '柱', '子', '或', '者', '两', '指', '在', '触', '屏', '上', '滑', '动', '能', '够', '自', '动', '缩', '放'];
+        var data = [220, 182, 191, 234, 290, 330, 310, 123, 442, 321, 90, 149, 210, 122, 133, 334, 198, 123, 125, 220];
+        var yMax = 500;
+        var dataShadow = [];
+
+        for (var i = 0; i < data.length; i++) {
+            dataShadow.push(yMax);
+        }
+        var myChart = echarts.init(document.getElementById('content'));
+        var option = {
+            grid: {
+                left: '0px', //grid 组件离容器左侧的距离。
+                top: '10px',
+                right: '0px', //grid 组件离容器右侧的距离。
+                bottom: '10px', //grid 组件离容器下侧的距离。
+                containLabel: true //grid 区域是否包含坐标轴的刻度标签[ default: false ]
+            },
+            xAxis: {
+                show:false,
+                data: dataAxis,
+                axisLabel: {
+                    inside: true,
+                    textStyle: {
+                        color: '#fff'
+                    }
+                },
+                axisTick: {
+                    show: false
+                },
+                axisLine: {
+                    show: false
+                },
+                z: 10
+            },
+            yAxis: {
+                axisLine: {
+                    show: false
+                },
+                axisTick: {
+                    show: false
+                },
+                axisLabel: {
+                    textStyle: {
+                        color: '#fff'
+                    }
+                }
+            },
+            dataZoom: [
+                {
+                    type: 'inside'
+                }
+            ],
+            series: [
+                { // For shadow
+                    type: 'bar',
+                    itemStyle: {
+                        normal: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    barGap: '-100%',
+                    barCategoryGap: '40%',
+                    data: dataShadow,
+                    animation: false
+                },
+                {
+                    type: 'bar',
+                    itemStyle: {
+                        normal: {
+                            color: new echarts.graphic.LinearGradient(
+                                0, 0, 0, 1,
+                                [
+                                    { offset: 0, color: '#83bff6' },
+                                    { offset: 0.5, color: '#188df0' },
+                                    { offset: 1, color: '#188df0' }
+                                ]
+                            )
+                        },
+                        emphasis: {
+                            color: new echarts.graphic.LinearGradient(
+                                0, 0, 0, 1,
+                                [
+                                    { offset: 0, color: '#2378f7' },
+                                    { offset: 0.7, color: '#2378f7' },
+                                    { offset: 1, color: '#83bff6' }
+                                ]
+                            )
+                        }
+                    },
+                    data: data
+                }
+            ]
+        };
+        myChart.setOption(option);
+        var zoomSize = 6;
+        myChart.on('click', function (params) {
+            console.log(dataAxis[Math.max(params.dataIndex - zoomSize / 2, 0)]);
+            myChart.dispatchAction({
+                type: 'dataZoom',
+                startValue: dataAxis[Math.max(params.dataIndex - zoomSize / 2, 0)],
+                endValue: dataAxis[Math.min(params.dataIndex + zoomSize / 2, data.length - 1)]
+            });
+        });
+    }
+
+</script>
+</body>
+
+</html>
