@@ -21,6 +21,7 @@
             overflow: hidden;
             background-color: #000000;
         }
+
         .popup-layer {
             /*重要*/
             user-select: none;
@@ -61,7 +62,18 @@
             user-select: text;
             pointer-events: auto;
         }
+
+        #setting {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
     </style>
+    <link rel="stylesheet" href="spectrum.css">
+    <script src="spectrum.js"></script>
 </head>
 
 <body>
@@ -73,10 +85,111 @@
     <div class='main' id="content">
     </div>
 </div>
+
+<div id="setting">
+    <div style="text-align: center;
+    font-size: 22px;
+    margin-bottom: 10px;">这里是配置中心
+    </div>
+    <div>
+        <label>地球颜色：</label>
+        <input type='text' id="setBaseColor"/>
+    </div>
+    <div>
+        <label>建筑透明度：</label>
+        <input type="range" id="setBuildFillAlpha" min="0" max="1" value="0.11" step="0.01">
+        <label id="buildFillAlpha">0.11</label>
+    </div>
+    <div>
+        <label>建筑线颜色：</label>
+        <input type='text' id="setBuildLineColor"/>
+    </div>
+    <div>
+        <label>建筑线宽：</label>
+        <input type="range" id="setBuildLineWidth" min="0" max="1" value="0.2" step="0.01">
+        <label id="buildLineWidth">0.2</label>
+    </div>
+    <div>
+        <label>开启灯光：</label>
+        <input type="checkbox" id="enableLight" checked/>
+    </div>
+    <div>
+        <label>扩散距离：</label>
+        <input type="range" id="p_distance" min="0" max="20000" value="10000" step="10">
+        <label id="distance">10000</label>
+    </div>
+    <div>
+        <label>衰减因子：</label>
+        <input type="range" id="p_dacay" min="0" max="10" value="1" step="0.1">
+        <label id="dacay">1</label>
+    </div>
+    <div>
+        <label>光源强度：</label>
+        <input type="range" id="p_intensity" min="0" max="20" value="2" step="0.1">
+        <label id="intensity">2</label>
+    </div>
+</div>
 <script>
+
+    $("#setBaseColor").spectrum({
+        color: "#131436",
+        change: function (color) {
+            // color.toHexString() // "#6265d8"
+            viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString(color.toHexString());
+        }
+    });
+    $("#setBuildLineColor").spectrum({
+        color: "#fff",
+        change: function (color) {
+            var c = color.toRgb();
+            viewer.scene.layers.find("baseLayer").style3D.lineColor = {
+                red: c.r / 255,
+                green: c.g / 255,
+                blue: c.b / 255,
+                alpha: c.a
+            };
+        }
+    });
+    $('#setBuildFillAlpha').on('input propertychange', function () {
+        var width = Number($('#setBuildFillAlpha').val());
+        $('#buildFillAlpha').html(width);
+        viewer.scene.layers.find("baseLayer").style3D.fillForeColor.alpha = width;
+    });
+    $('#setBuildLineWidth').on('input propertychange', function () {
+        var width = Number($('#setBuildLineWidth').val());
+        $('#buildLineWidth').html(width);
+        viewer.scene.layers.find("baseLayer").style3D.lineWidth = width;
+    });
+    $("#enableLight").on("change", function (e) {
+        if (e.target.checked) {
+            addLight();
+        } else {
+            scene.removeLightSource(pointLight1);
+            scene.removeLightSource(pointLight2);
+        }
+    });
+    $('#p_distance').bind('input propertychange', function () {
+        var value = Number($(this).val());
+        $("#distance").html(value);
+        pointLight1.cutoffDistance = value;
+        pointLight2.cutoffDistance = value;
+    });
+    $('#p_dacay').bind('input propertychange', function () {
+        var value = Number($(this).val());
+        $("#dacay").html(value);
+        pointLight1.decay = value;
+        pointLight2.decay = value;
+    });
+    $('#p_intensity').bind('input propertychange', function () {
+        var value = Number($(this).val());
+        $("#intensity").html(value);
+        pointLight1.intensity = value;
+        pointLight2.intensity = value;
+    });
+
     var viewer = new Cesium.Viewer('cesiumContainer');
     viewer.imageryLayers.removeAll(); // 去掉影像
-    viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#6495ED");
+    viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#131436");
     var scene = viewer.scene;
 
     scene.camera.setView({
@@ -99,8 +212,8 @@
 
         layer.style3D.fillForeColor.alpha = 0.11; //半透 不能再比这个小了
         layer.style3D.fillStyle = Cesium.FillStyle.Fill_And_WireFrame; // 填充和线框模式
-        layer.style3D.lineColor = Cesium.Color.WHITE.withAlpha(1);
-        layer.style3D.lineWidth = 1.0;
+        layer.style3D.lineColor = Cesium.Color.WHITE;
+        layer.style3D.lineWidth = 0.5;
         layer.wireFrameMode = Cesium.WireFrameType.Sketch; // 草图模式
 
         // 调节场景光线
@@ -142,23 +255,26 @@
         //     hypsometricSetting: hyp,
         //     analysisMode: Cesium.HypsometricSettingEnum.AnalysisRegionMode.ARM_ALL
         // };
-
-        addLight(Cesium.Cartesian3.fromDegrees(114.3991825197576, 30.51761665528449));
-        addLight(Cesium.Cartesian3.fromDegrees(114.37582805817355, 30.50433675146387));
     });
 
-    function addLight(position) {
+    var pointLight1 = null;
+    var pointLight2 = null;
+
+    function addLight() {
         // 添加灯光
         var options = {
-            color: new Cesium.Color(1, 1, 1, 1),
-            cutoffDistance: 1000,
-            decay: 1,
-            intensity: 3
+            color: new Cesium.Color(1, 1, 1, 1), // 光源颜色
+            cutoffDistance: 10000, // 光源的扩散距离
+            decay: 1, // 光源衰减因子,越小随着距离衰减越小，越亮。
+            intensity: 2 // 光源强度L
         };
-        var pointLight = new Cesium.PointLight(position, options);
-        scene.addLightSource(pointLight);
+        pointLight1 = new Cesium.PointLight(Cesium.Cartesian3.fromDegrees(114.3991825197576, 30.51761665528449), options);
+        scene.addLightSource(pointLight1);
+        pointLight2 = new Cesium.PointLight(Cesium.Cartesian3.fromDegrees(114.37582805817355, 30.50433675146387), options);
+        scene.addLightSource(pointLight2);
     }
 
+    addLight();
 
     viewer.screenSpaceEventHandler.setInputAction(function (clickEvent) {
         var position = viewer.scene.pickPosition(clickEvent.position);
@@ -445,7 +561,7 @@
                 containLabel: true //grid 区域是否包含坐标轴的刻度标签[ default: false ]
             },
             xAxis: {
-                show:false,
+                show: false,
                 data: dataAxis,
                 axisLabel: {
                     inside: true,
@@ -483,7 +599,7 @@
                 { // For shadow
                     type: 'bar',
                     itemStyle: {
-                        normal: { color: 'rgba(0,0,0,0.05)' }
+                        normal: {color: 'rgba(0,0,0,0.05)'}
                     },
                     barGap: '-100%',
                     barCategoryGap: '40%',
@@ -497,9 +613,9 @@
                             color: new echarts.graphic.LinearGradient(
                                 0, 0, 0, 1,
                                 [
-                                    { offset: 0, color: '#83bff6' },
-                                    { offset: 0.5, color: '#188df0' },
-                                    { offset: 1, color: '#188df0' }
+                                    {offset: 0, color: '#83bff6'},
+                                    {offset: 0.5, color: '#188df0'},
+                                    {offset: 1, color: '#188df0'}
                                 ]
                             )
                         },
@@ -507,9 +623,9 @@
                             color: new echarts.graphic.LinearGradient(
                                 0, 0, 0, 1,
                                 [
-                                    { offset: 0, color: '#2378f7' },
-                                    { offset: 0.7, color: '#2378f7' },
-                                    { offset: 1, color: '#83bff6' }
+                                    {offset: 0, color: '#2378f7'},
+                                    {offset: 0.7, color: '#2378f7'},
+                                    {offset: 1, color: '#83bff6'}
                                 ]
                             )
                         }
