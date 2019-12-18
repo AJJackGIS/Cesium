@@ -98,3 +98,8 @@
     
     Cesium.Plane.projectPointOntoPlane(plane, point, result) → Cartesian3
     计算点在平面上的投影点
+	
+> 对数深度
+	
+	我们封装的属性叫  earth.terrainEffect.logDepth 
+	cesium对应的属性 scene.logarithmicDepthBuffer

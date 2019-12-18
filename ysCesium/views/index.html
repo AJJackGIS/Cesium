@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <title>ysCesium首页</title>
+    <link rel="icon" href="../images/logo.png" type="img/x-ico"/>
+    <!--<link rel="stylesheet" href="../plugins/Cesium/Widgets/widgets.css">-->
+    <link rel="stylesheet" href="../../lib/Cesium-1.56.1/Build/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="../plugins/ysc/css/ysc.css">
+    <link rel="stylesheet" href="../css/reset.css">
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/layerPay.css">
+    <link rel="stylesheet" href="../css/index.css">
+</head>
+<body>
+<div class="container">
+    <div class="top">
+        <a class="logo" href="http://www.yueyanshaosun.cn">跃焱邵隼</a>
+        <a class="ys-cesium" href="index.html">Ys&nbsp;&nbsp;Cesium</a>
+        <a class="download" href="javascript:;">下载</a>
+    </div>
+    <div class="map" id="map">
+    </div>
+    <div class="label">
+        <div class="label-tips">有我更轻松!</div>
+        <div class="btn">确定</div>
+    </div>
+    <div class="left">
+        <div class="tit">轻松搭建</div>
+        <a href="main_introduction.html">前言</a>
+        <a href="main.html">示例</a>
+        <div class="tit">关于</div>
+        <a href="main_introduction_ysc.html">ysCesium</a>
+        <a href="main_QA.html">反馈与提问</a>
+        <div class="tit">相关资料</div>
+        <a href="https://cesiumjs.org/">cesium官网</a>
+    </div>
+    <div class='ysc-dynamic-layer' id='one'>
+        <div class='line'></div>
+        <div class='main'>
+            <div class="charts" id="chart-1"></div>
+        </div>
+    </div>
+</div>
+<!--打赏-->
+<div class="ys-layer-pay">
+    <div class="layer-main">
+        <div class="layer-tit">我长得帅，任性鼓励一毛钱</div>
+        <div class="layer-con clearfix">
+            <div class="img-box img-box1"></div>
+            <div class="img-box img-box2"></div>
+        </div>
+        <div class="layer-btns">
+            <a class="layer-btn layer-btn1" download=""  href="../data/ysc.zip" target="_blank">其实我一直是靠脸吃饭的</a>
+            <a class="layer-btn layer-btn2" download=""  href="../data/ysc.zip" target="_blank">对不起，我很丑</a>
+        </div>
+    </div>
+    <div class="layer-flow"></div>
+</div>
+</body>
+<script src="../plugins/jquery-1.10.2.min.js"></script>
+<script src="../plugins/echarts.min.js"></script>
+<!--<script src="../plugins/Cesium/Cesium.js"></script>-->
+<script src="../../lib/Cesium-1.56.1/Build/Cesium/Cesium.js"></script>
+<script src="../plugins/ysc/ysc.js"></script>
+<script src="../js/index.js"></script>
+<script src="../js/layerPay.js"></script>
+</html>

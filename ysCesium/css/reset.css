@@ -1,0 +1,19 @@
+@charset "utf-8";
+body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,button,textarea,p,blockquote,th,td{padding:0;margin:0; font-family:"Microsoft YaHei"," SimSun "; list-style-type:none;}
+body,button,input,select,textarea{font:12px/1.5 tahoma,arial,\5b8b\4f53,sans-serif;}
+table{border-collapse:collapse;border-spacing:0;font-size: inherit;font:100%;}
+caption,th{text-align:left;}
+fieldset,img{border:none;}
+ul,ol{list-style:none;}
+h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal;}
+input,button,textarea,select{font-family: inherit;font-size: inherit;font-weight: inherit;vertical-align:middle;*font-size:100%;}
+address,caption,cite,code,dfn,em,i,b,strong,th,var,optgroup{font-style:normal;font-weight:normal;}
+small{font-size:100%;}
+hr{color:#D1D7DC;background-color:#D1D7DC;border:none;height:1px;}
+.f-l{float:left;}
+.f-r{float:right;}
+.clearfix:after {content:'\0020';display:block;height:0;clear:both;visibility:hidden;}
+.clearfix{zoom:1;}
+a{ text-decoration:none;color:#333333}
+a:hover{ text-decoration:underline;}
+

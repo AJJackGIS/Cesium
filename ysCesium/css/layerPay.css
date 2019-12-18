@@ -1,0 +1,77 @@
+.ys-layer-pay{
+    display: none;
+    position: fixed;
+    top:0;
+    left:0;
+    right:0;
+    bottom: 0;
+    z-index: 99999;
+    background-color: rgba(0,0,0,0.8);
+}
+.ys-layer-pay .layer-main{
+    margin: 100px auto;
+    width: 500px;
+    height:540px;
+    background-color: #ffffff;
+}
+.img-box{
+    width:50%;
+    float:left;
+    height:300px;
+}
+.img-box1{
+    background: url("../images/pay_2.jpg") no-repeat center center;
+    background-size: auto 100%;
+}
+.img-box2{
+    background: url("../images/pay_1.jpg") no-repeat center center;
+    background-size: auto 100%;
+}
+.layer-tit{
+    line-height: 90px;
+    font-size: 30px;
+    text-align: center;
+    font-weight: bold;
+}
+.layer-btns{
+    margin-top: 20px;
+}
+.layer-btns .layer-btn{
+    display: block;
+    height:50px;
+    line-height: 50px;
+    width:350px;
+    margin:15px auto;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none;
+}
+.layer-btn1{
+    font-size: 20px;
+    color:#fff;
+    background:#00A0E8 url("../images/huaji_1.png") no-repeat 300px center;
+    background-size: 40px auto;
+}
+.layer-btn2{
+    font-size: 18px;
+    color: #fff;
+    background:#d6dbd6 url("../images/huaji_2.png") no-repeat 300px center;
+    background-size: 40px auto;
+}
+.layer-btns .layer-btn:hover{
+    opacity: 0.8;
+}
+@media screen and (max-width: 600px) {
+    .ys-layer-pay  .layer-main{
+        width: 90%;
+    }
+}
+.layer-flow{
+    position: absolute;
+    left:50%;
+    right:50%;
+    top:50%;
+    bottom: 50%;
+    background: url("../images/flow.png")no-repeat center center;
+    background-size: 30% auto;
+}

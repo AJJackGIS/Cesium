@@ -22,7 +22,8 @@
             overflow: hidden;
             background-color: #000000;
         }
-        .cesium-viewer-bottom{
+
+        .cesium-viewer-bottom {
             display: none;
         }
     </style>
@@ -53,13 +54,21 @@
 </div>
 <script>
     function onload(Cesium) {
-        var viewer = new Cesium.Viewer('cesiumContainer',{
+        var viewer = new Cesium.Viewer('cesiumContainer', {
             imageryProvider: new Cesium.UrlTemplateImageryProvider({
                 url: 'http://www.google.cn/maps/vt?lyrs=s@716&x={x}&y={y}&z={z}'
             })
         });
         var scene = viewer.scene;
         $('#loadingbar').remove();
+
+        var tileset = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
+            url: "https://lab.earthsdk.com/model/be0b1610c0d711e99f7ddd77cbe22fea/tileset.json"
+        }));
+
+        tileset.readyPromise.then(function () {
+            viewer.zoomTo(tileset);
+        });
     }
 </script>
 </body>
